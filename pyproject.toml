@@ -12,3 +12,12 @@ dependencies = []
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+lint = [
+    "ruff>=0.11.8",
+]
+
+
+[project.scripts]
+leanbook = "leanbook.cli:main"
