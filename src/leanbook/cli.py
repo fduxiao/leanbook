@@ -1,8 +1,26 @@
 import argparse
+from pathlib import Path
+
+from .source_tree import SourceTree
+from .target_tree import TargetTree
+
+
+def parse_path(args):
+    path = Path(args.path)
+    output = args.output
+    if output is None:
+        output = path / ".lake/build/doc"
+    else:
+        output = Path(output)
+    return path, output
 
 
 def build(args):
-    print(args)
+    path, output = parse_path(args)
+    source_tree = SourceTree(path)
+    source_tree.build_tree()
+    target_tree = TargetTree(source_tree, output)
+    target_tree.render_all()
 
 
 def serve(args):
@@ -19,6 +37,7 @@ def main():
     serve_parser = sub_cmds.add_parser("serve", description="run an HTTP server")
     serve_parser.set_defaults(func=serve)
     serve_parser.add_argument("path", default=".")
+    serve_parser.add_argument("--output", "-o", default=None)
 
     build_parser = sub_cmds.add_parser("build", description="")
     build_parser.set_defaults(func=build)
