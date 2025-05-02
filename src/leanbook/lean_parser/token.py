@@ -1,10 +1,12 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
+@dataclass()
 class Token:
-    pass
+    pos: int
 
 
+@dataclass()
 class End(Token):
     pass
 
@@ -25,7 +27,7 @@ class DocString(ModuleComment):
 
 
 @dataclass()
-class Word:
+class Word(Token):
     word: str
 
 
@@ -37,21 +39,3 @@ class Keyword(Word):
 @dataclass()
 class Code(Token):
     content: str
-    doc_string: str = ""
-
-
-@dataclass()
-class LeanFile:
-    things: list[Token] = field(default_factory=list)
-
-    def append(self, ast: Token):
-        self.things.append(ast)
-
-    def add_comment(self, comment):
-        self.append(Comment(comment))
-
-    def add_code(self, code):
-        self.append(Code(code))
-
-    def build_doc_string(self):
-        pass

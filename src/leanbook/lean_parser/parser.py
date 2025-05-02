@@ -8,7 +8,7 @@ class SourceContext:
 
     def look(self, n=1):
         r = self.text[self.pos : self.pos + n]
-        if r == "":
+        if self.pos + n > len(self.text):
             return None
         return r
 
@@ -33,6 +33,10 @@ class Fail:
     pass
 
 
+class TryFail:
+    pass
+
+
 class BaseParser:
     def parse(self, ctx: SourceContext):
         return Fail
@@ -42,6 +46,25 @@ class BaseParser:
 
     def __or__(self, other: "BaseParser") -> "BaseParser":
         return OrElse(self, other)
+
+    def try_fail(self):
+        return TryParser(self)
+
+    def try_look(self):
+        return TryLookParser(self)
+
+
+class TryParser(BaseParser):
+    def __init__(self, parser: BaseParser):
+        self.parser = parser
+
+    def parse(self, ctx: SourceContext):
+        pos = ctx.pos
+        r = self.parser.parse(ctx)
+        if r is Fail:
+            ctx.pos = pos
+            return TryFail
+        return r
 
 
 class OrElse(BaseParser):
@@ -55,6 +78,19 @@ class OrElse(BaseParser):
         if r is Fail:
             ctx.pos = pos
             return self.p2.parse(ctx)
+        return r
+
+
+class TryLookParser(BaseParser):
+    def __init__(self, parser: BaseParser):
+        self.parser = parser
+
+    def parse(self, ctx: SourceContext):
+        pos = ctx.pos
+        r = self.parser.parse(ctx)
+        if r is Fail:
+            r = TryFail
+        ctx.pos = pos
         return r
 
 
