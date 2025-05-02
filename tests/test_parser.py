@@ -1,6 +1,6 @@
 import unittest
 from leanbook.lean_parser.parser import *
-from leanbook.lean_parser.ast import *
+from leanbook.lean_parser import token, lexer
 
 
 class TestParser(unittest.TestCase):
@@ -52,7 +52,7 @@ class TestParser(unittest.TestCase):
         self.assertIs(parser.parse_str(x), Fail)
 
     def test_parse_block_comment(self):
-        parser = BlockComment()
+        parser = lexer.BlockComment()
 
         self.assert_complete_parse(parser, "/--/")
         self.assert_fail(parser, "/-")
@@ -70,24 +70,24 @@ class TestParser(unittest.TestCase):
         self.assertEqual(ctx.rest(), "def")
 
     def test_code(self):
-        parser = CodeParser()
+        parser = lexer.CodeParser()
         self.assert_complete_parse(parser, r"abcd")
         ctx = self.assert_parse(parser, r'abcd "\"/-" /-')
         self.assertEqual(ctx.rest(), "/-")
 
-    def test_file_parser(self):
-        parser = FileParser()
-        ctx = SourceContext(r'/-aaa-/ /--doc string-/def "/-" yz /- comment-/ xz  ')
-        result: LeanFile = parser.parse(ctx)
+    def test_lexer(self):
+        parser = lexer.BlockParser()
+        ctx = SourceContext(r'/-!aaa-/ /--doc string-/def "/-" yz /- comment-/ xz  ')
+        result: list = parser.parse(ctx)
         self.assertTrue(ctx.end())
         self.assertListEqual(
-            result.things,
+            result,
             [
-                Comment(content="/-aaa-/"),
-                Comment(content="/--doc string-/"),
-                Code(content='def "/-" yz ', doc_string=""),
-                Comment(content="/- comment-/"),
-                Code(content="xz  ", doc_string=""),
+                token.ModuleComment(content="/-!aaa-/"),
+                token.DocString(content="/--doc string-/"),
+                token.Code(content='def "/-" yz', doc_string=""),
+                token.Comment(content="/- comment-/"),
+                token.Code(content="xz", doc_string=""),
             ],
         )
 

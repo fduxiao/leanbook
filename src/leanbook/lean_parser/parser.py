@@ -1,4 +1,4 @@
-from .ast import LeanFile
+from functools import update_wrapper
 
 
 class SourceContext:
@@ -58,31 +58,15 @@ class OrElse(BaseParser):
         return r
 
 
-class Look(BaseParser):
-    def __init__(self, n=1):
-        self.n = n
-
-    def parse(self, ctx: SourceContext):
-        return ctx.look(self.n)
-
-
-class Take(BaseParser):
-    def __init__(self, n=1):
-        self.n = n
-
-    def parse(self, ctx: SourceContext):
-        text = ctx.take(self.n)
-        if text is None:
-            return Fail
-        return text
-
-
 class GetCtx(BaseParser):
     def parse(self, ctx: SourceContext):
         return ctx
 
 
-class MonadParser(BaseParser):
+get_ctx = GetCtx()
+
+
+class MonadicParser(BaseParser):
     def do(self):
         yield BaseParser()
 
@@ -101,6 +85,13 @@ class MonadParser(BaseParser):
 
     def parse(self, ctx: SourceContext):
         return self.run_monad(ctx)
+
+
+def parser_do(func) -> MonadicParser:
+    parser = MonadicParser()
+    parser.do = func
+    update_wrapper(parser, func)
+    return parser
 
 
 class String(BaseParser):
@@ -155,6 +146,9 @@ class Spaces(BaseParser):
         return result
 
 
+spaces = Spaces()
+
+
 class AnyUntil(BaseParser):
     def __init__(self, until: BaseParser):
         self.until = until
@@ -175,38 +169,15 @@ class AnyUntil(BaseParser):
         return result
 
 
-class BlockComment(MonadParser):
-    def __init__(self):
-        self.look2 = Look(2)
-        self.start = String("/-")
-        self.end = String("-/")
-        self.until_mark = AnyUntil(self.start | self.end)
+class StrLiteral(MonadicParser):
+    delim = '"'
 
-    def do(self):
-        yield self.start
-        result = ""
-        while True:
-            x = yield self.look2
-            if x is None:
-                break
-            if x == "-/":
-                break
-            if x == "/-":
-                x = yield self
-                result += x
-            else:
-                x = yield self.until_mark
-                result += x
-        yield self.end
-        return "/-" + result + "-/"
-
-
-class StrLiteral(MonadParser):
-    def __init__(self, delim='"'):
+    def __init__(self, delim=None):
         self.ctx = GetCtx()
-        self.delim = delim  # delimiter
-        self.start = String(delim)
-        self.end = String(delim)
+        if delim is not None:
+            self.delim = delim  # delimiter
+        self.start = String(self.delim)
+        self.end = String(self.delim)
 
     def do(self):
         yield self.start
@@ -223,51 +194,15 @@ class StrLiteral(MonadParser):
             else:
                 result += ctx.take(1)
         yield self.end
-        result = '"' + result + '"'
+        result = self.delim + result + self.delim
         return result
 
 
-class CodeParser(MonadParser):
-    def __init__(self):
-        self.str_literal = StrLiteral()
-
-    def do(self):
-        ctx = yield GetCtx()
-        result = ""
-        while True:
-            if ctx.end():
-                break
-            if ctx.look(1) == '"':
-                result += yield self.str_literal
-                continue
-            if ctx.look(2) == "/-":
-                break
-            result += ctx.take(1)
-        return result
+str_literal = StrLiteral()
 
 
-class FileParser(MonadParser):
-    """
-    This is actually the tokenizer (lexer). Tokens are
-    just comments enclosed with '/--/' and others
-    """
+class CharLiteral(StrLiteral):
+    delim = "'"
 
-    def __init__(self):
-        self.spaces = Spaces()
-        self.comment = BlockComment()
-        self.code = CodeParser()
 
-    def do(self):
-        result = LeanFile()
-        ctx = yield GetCtx()
-        while True:
-            yield self.spaces
-            if ctx.end():
-                break
-            if ctx.look(2) == "/-":
-                x = yield self.comment
-                result.add_comment(x)
-            else:  # parse code
-                x = yield self.code
-                result.add_code(x)
-        return result
+char_literal = CharLiteral()

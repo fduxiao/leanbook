@@ -1,26 +1,50 @@
 from dataclasses import dataclass, field
 
 
-class AST:
+class Token:
+    pass
+
+
+class End(Token):
     pass
 
 
 @dataclass()
-class Comment(AST):
+class Comment(Token):
     content: str
 
 
 @dataclass()
-class Code(AST):
+class ModuleComment(Comment):
+    pass
+
+
+@dataclass()
+class DocString(ModuleComment):
+    pass
+
+
+@dataclass()
+class Word:
+    word: str
+
+
+@dataclass()
+class Keyword(Word):
+    pass
+
+
+@dataclass()
+class Code(Token):
     content: str
     doc_string: str = ""
 
 
 @dataclass()
 class LeanFile:
-    things: list[AST] = field(default_factory=list)
+    things: list[Token] = field(default_factory=list)
 
-    def append(self, ast: AST):
+    def append(self, ast: Token):
         self.things.append(ast)
 
     def add_comment(self, comment):
