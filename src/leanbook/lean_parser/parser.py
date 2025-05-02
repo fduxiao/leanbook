@@ -1,3 +1,6 @@
+from .ast import LeanFile
+
+
 class SourceContext:
     def __init__(self, text: str, pos=0):
         self.text = text
@@ -146,7 +149,7 @@ class Spaces(BaseParser):
         while True:
             x = ctx.look(1)
             if x in [" ", "\n", "\t", "\r"]:
-                result += x
+                result += ctx.take(1)
             else:
                 break
         return result
@@ -196,3 +199,75 @@ class BlockComment(MonadParser):
                 result += x
         yield self.end
         return "/-" + result + "-/"
+
+
+class StrLiteral(MonadParser):
+    def __init__(self, delim='"'):
+        self.ctx = GetCtx()
+        self.delim = delim  # delimiter
+        self.start = String(delim)
+        self.end = String(delim)
+
+    def do(self):
+        yield self.start
+        ctx = yield self.ctx
+        result = ""
+        while True:
+            x = ctx.look(1)
+            if x is None:
+                break
+            if x == self.delim:
+                break
+            if x == "\\":
+                result += ctx.take(2)
+            else:
+                result += ctx.take(1)
+        yield self.end
+        result = '"' + result + '"'
+        return result
+
+
+class CodeParser(MonadParser):
+    def __init__(self):
+        self.str_literal = StrLiteral()
+
+    def do(self):
+        ctx = yield GetCtx()
+        result = ""
+        while True:
+            if ctx.end():
+                break
+            if ctx.look(1) == '"':
+                result += yield self.str_literal
+                continue
+            if ctx.look(2) == "/-":
+                break
+            result += ctx.take(1)
+        return result
+
+
+class FileParser(MonadParser):
+    """
+    This is actually the tokenizer (lexer). Tokens are
+    just comments enclosed with '/--/' and others
+    """
+
+    def __init__(self):
+        self.spaces = Spaces()
+        self.comment = BlockComment()
+        self.code = CodeParser()
+
+    def do(self):
+        result = LeanFile()
+        ctx = yield GetCtx()
+        while True:
+            yield self.spaces
+            if ctx.end():
+                break
+            if ctx.look(2) == "/-":
+                x = yield self.comment
+                result.add_comment(x)
+            else:  # parse code
+                x = yield self.code
+                result.add_code(x)
+        return result
