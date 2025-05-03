@@ -36,7 +36,7 @@ class TestLexer(unittest.TestCase):
         helper.assert_complete_parse("--\n")
 
     def test_lexer(self):
-        parser = lexer.lexer
+        parser = lexer.any_token
         text = (
             "  /-!aaa-/ import something\n"
             "\\abc\n"
@@ -79,27 +79,27 @@ class TestLexer(unittest.TestCase):
         assert_parse(token.DeclModifier, pos=138, content="@[simp]")
 
         self.assertFalse(ctx.end())
-        assert_parse(token.End, pos=146)
+        assert_parse(token.EOF, pos=146)
         self.assertTrue(ctx.end())
 
         self.assertEqual(ctx.pos, 146)
         self.assertEqual(len(ctx.text), 146)
 
     def test_command(self):
-        self.assertEqual(lexer.identifier.parse_str("def a := 2"), "def")
-        self.assertEqual(lexer.command.parse_str("def a := 2"), "def")
+        self.assertEqual(lexer.identifier_parser.parse_str("def a := 2"), "def")
+        self.assertEqual(lexer.command_parser.parse_str("def a := 2"), "def")
 
-        self.assertEqual(lexer.identifier.parse_str("defa x y z"), "defa")
-        self.assertIsInstance(lexer.command.parse_str("defa x y z"), Fail)
+        self.assertEqual(lexer.identifier_parser.parse_str("defa x y z"), "defa")
+        self.assertIsInstance(lexer.command_parser.parse_str("defa x y z"), Fail)
 
-        self.assertEqual(lexer.identifier.parse_str("def.a x y z"), "def.a")
-        self.assertIsInstance(lexer.command.parse_str("def.a x y z"), Fail)
+        self.assertEqual(lexer.identifier_parser.parse_str("def.a x y z"), "def.a")
+        self.assertIsInstance(lexer.command_parser.parse_str("def.a x y z"), Fail)
 
-        self.assertEqual(lexer.identifier.parse_str("def_a x y z"), "def_a")
-        self.assertIsInstance(lexer.command.parse_str("def_a x y z"), Fail)
+        self.assertEqual(lexer.identifier_parser.parse_str("def_a x y z"), "def_a")
+        self.assertIsInstance(lexer.command_parser.parse_str("def_a x y z"), Fail)
 
         # This may be fixed later
-        self.assertEqual(lexer.identifier.parse_str("0defa x y z"), "0defa")
+        self.assertEqual(lexer.identifier_parser.parse_str("0defa x y z"), "0defa")
 
 
 if __name__ == "__main__":

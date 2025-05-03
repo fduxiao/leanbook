@@ -1,6 +1,6 @@
 import re
 
-from .parser import MonadicParser, Fail, TryFail
+from .parser import MonadicParser, Fail, TryFail, get_ctx
 from . import parser, token
 
 
@@ -65,7 +65,7 @@ class Identifier(MonadicParser):
         return ctx.text[start:end]
 
 
-identifier = Identifier()
+identifier_parser = Identifier()
 
 
 class Command(MonadicParser):
@@ -104,7 +104,7 @@ class Command(MonadicParser):
         return Fail(ctx, "Expect a command")
 
 
-command = Command()
+command_parser = Command()
 
 
 class CodeParser(MonadicParser):
@@ -124,14 +124,14 @@ class CodeParser(MonadicParser):
             if ctx.look(2) == "@[":
                 break
             # stop at keywords
-            cmd = yield command.try_look()
+            cmd = yield command_parser.try_look()
             if cmd is not TryFail:
                 break
             result += ctx.take(1)
         return result
 
 
-code = CodeParser()
+code_parser = CodeParser()
 
 
 class Lexer(MonadicParser):
@@ -144,7 +144,7 @@ class Lexer(MonadicParser):
         yield parser.spaces
         pos = ctx.pos
         if ctx.end():
-            return token.End(pos)
+            return token.EOF(pos)
 
         if ctx.look(2) == "/-":
             x = yield block_comment
@@ -165,21 +165,43 @@ class Lexer(MonadicParser):
             x = ctx.take(index + 1)
             return token.DeclModifier(pos, x)
 
-        cmd = yield command.try_fail()
+        cmd = yield command_parser.try_fail()
         if cmd is not TryFail:
             return token.Command(pos, cmd)
 
-        w = yield identifier.try_fail()
+        w = yield identifier_parser.try_fail()
         if w is not TryFail:
             return token.Identifier(pos, w)
 
         # read code
-        x = yield code
+        x = yield code_parser
         x = x.strip()
         return token.Code(pos, x)
 
 
-lexer = Lexer()
+any_token = Lexer()
+
+
+class ExpectToken(MonadicParser):
+    def __init__(self, token_class):
+        self.token_class = token_class
+
+    def do(self):
+        ctx = yield get_ctx
+        tk = yield any_token
+        if not isinstance(tk, self.token_class):
+            return Fail(ctx, f"Expect `{self.token_class}`, but got `{tk}`")
+        return tk
+
+
+eof = ExpectToken(token.EOF)
+comment = ExpectToken(token.Comment)
+module_comment = ExpectToken(token.ModuleComment)
+doc_string = ExpectToken(token.DocString)
+identifier = ExpectToken(token.Identifier)
+command = ExpectToken(token.Command)
+decl_modifier = ExpectToken(token.DeclModifier)
+code = ExpectToken(token.Code)
 
 
 class AllToken(MonadicParser):
@@ -190,8 +212,8 @@ class AllToken(MonadicParser):
     def do(self):
         result = []
         while True:
-            tk = yield lexer
+            tk = yield any_token
             result.append(tk)
-            if isinstance(tk, token.End):
+            if isinstance(tk, token.EOF):
                 break
         return result

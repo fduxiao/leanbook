@@ -1,8 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Union
 
-from . import token
-from .lexer import lexer
+from . import token, lexer
 from .parser import MonadicParser, Fail, get_ctx
 
 Comment = token.Comment
@@ -57,11 +56,11 @@ class DeclParser(MonadicParser):
     def do(self):
         ctx = yield get_ctx
         # read a token
-        tk = yield lexer
+        tk = yield lexer.any_token
         decl_modifier = ""
         if isinstance(tk, token.DeclModifier):
             decl_modifier = tk.content
-            tk = yield lexer
+            tk = yield lexer.any_token
         # it must be a command
         if not isinstance(tk, token.Command):
             return Fail(ctx, f"Expect command, but got {tk}")
@@ -70,7 +69,7 @@ class DeclParser(MonadicParser):
         decl_type = tk.content
         decl_pos = tk.pos
         # read the name
-        tk = yield lexer
+        tk = yield lexer.any_token
         name = None
         if not isinstance(tk, token.Identifier):
             if decl_type != "instance":
@@ -84,8 +83,8 @@ class DeclParser(MonadicParser):
         ctx = yield get_ctx
         while True:
             pos = ctx.pos
-            tk = yield lexer
-            if isinstance(tk, token.End):
+            tk = yield lexer.any_token
+            if isinstance(tk, token.EOF):
                 break
             if isinstance(tk, token.Code):
                 body += tk.content
@@ -106,8 +105,8 @@ class SectionParser(MonadicParser):
         ctx = yield get_ctx
         section = self.section_class()
         while True:
-            tk = yield lexer
-            if isinstance(tk, token.End):
+            tk = yield lexer.any_token
+            if isinstance(tk, token.EOF):
                 break
             if isinstance(tk, token.ModuleComment):
                 section.append(tk)
@@ -134,9 +133,7 @@ class SectionParser(MonadicParser):
                     section.append(decl)
                     continue
                 if tk.content == "import":
-                    tk = yield lexer
-                    if not isinstance(tk, token.Identifier):
-                        return Fail(ctx, f"Expect identifier, but got {tk}")
+                    tk = yield lexer.identifier
                     section.append(Import(tk.pos, tk.content))
                     continue
             return Fail(ctx, f"Unknown Token {tk}")

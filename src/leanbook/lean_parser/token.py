@@ -8,7 +8,7 @@ class Token:
 
 
 @dataclass()
-class End(Token):
+class EOF(Token):
     pass
 
 
