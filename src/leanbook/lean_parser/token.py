@@ -38,5 +38,10 @@ class Command(Token):
 
 
 @dataclass()
+class DeclModifier(Token):
+    pass
+
+
+@dataclass()
 class Code(Token):
     pass

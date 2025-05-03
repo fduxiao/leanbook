@@ -37,6 +37,7 @@ class TestLexer(unittest.TestCase):
             '"/-" yz /- comme/--/nt-/ xz  '
             "#check x = 2\n"
             "section abc end abc  "
+            "@[simp] "
         )
         ctx = SourceContext(text)
 
@@ -67,10 +68,14 @@ class TestLexer(unittest.TestCase):
         assert_parse(token.Identifier, pos=125, content="abc")
         assert_parse(token.Command, pos=129, content="end")
         assert_parse(token.Identifier, pos=133, content="abc")
+        assert_parse(token.DeclModifier, pos=138, content="@[simp]")
 
         self.assertFalse(ctx.end())
-        assert_parse(token.End, pos=138)
+        assert_parse(token.End, pos=146)
         self.assertTrue(ctx.end())
+
+        self.assertEqual(ctx.pos, 146)
+        self.assertEqual(len(ctx.text), 146)
 
     def test_command(self):
         self.assertEqual(lexer.identifier.parse_str("def a := 2"), "def")

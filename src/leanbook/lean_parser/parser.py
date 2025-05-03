@@ -34,6 +34,12 @@ class SourceContext:
     def rest(self):
         return self.text[self.pos :]
 
+    def find(self, sub, start=0):
+        index = self.text.find(sub, self.pos + start)
+        if index < 0:
+            return None
+        return index - self.pos
+
 
 class Fail:
     pass

@@ -120,6 +120,8 @@ class CodeParser(MonadicParser):
                 break
             if ctx.look(2) == "--":
                 break
+            if ctx.look(2) == "@[":
+                break
             # stop at keywords
             cmd = yield command.try_look()
             if cmd is not TryFail:
@@ -155,6 +157,12 @@ class Lexer(MonadicParser):
             x = yield line_comment
             x = x.strip() + "\n"
             return token.Comment(pos, x)
+        if ctx.look(2) == "@[":
+            index = ctx.find(']')
+            if index < 0:
+                return Fail
+            x = ctx.take(index + 1)
+            return token.DeclModifier(pos, x)
 
         cmd = yield command.try_fail()
         if cmd is not TryFail:
