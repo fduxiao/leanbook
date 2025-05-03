@@ -55,13 +55,14 @@ class Identifier(MonadicParser):
 
     def do(self):
         ctx = yield parser.get_ctx
-        match = self.pattern.match(ctx.text, ctx.pos)
+        pos = ctx.pos
+        match = self.pattern.match(ctx.text, pos.index)
         if match is None:
             return Fail(ctx, "Unexpected EOF")
         (start, end) = match.span(0)
         if start == end:
             return Fail(ctx, "Empty identifier")
-        ctx.pos = end
+        ctx.shift(end - pos.index)
         return ctx.text[start:end]
 
 
@@ -99,7 +100,7 @@ class Command(MonadicParser):
                     continue
                 if x.isalnum():
                     continue
-            ctx.pos += n
+            ctx.shift(n)
             return w
         return Fail(ctx, "Expect a command")
 

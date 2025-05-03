@@ -1,9 +1,10 @@
 from dataclasses import dataclass
+from .parser import Pos
 
 
 @dataclass()
 class Token:
-    pos: int
+    pos: Pos
     content: str = None
 
 

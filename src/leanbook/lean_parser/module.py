@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import Union
 
 from . import token, lexer
-from .parser import MonadicParser, Fail, get_ctx
+from .parser import MonadicParser, Fail, get_ctx, Pos
 
 Comment = token.Comment
 ModuleComment = token.ModuleComment
@@ -11,7 +11,7 @@ Code = token.Code
 
 @dataclass()
 class Import:
-    pos: int
+    pos: Pos
     name: str
 
 
@@ -19,7 +19,7 @@ class Import:
 class Declaration:
     """Things that can be referred to"""
 
-    pos: int
+    pos: Pos
     type: str
     name: str | None
     body: str
@@ -32,7 +32,7 @@ Thing = Union[ModuleComment | Code | Import | Declaration | Comment, "Section"]
 
 @dataclass()
 class Section:
-    pos: int = 0
+    pos: Pos = field(default_factory=lambda: Pos(0, 1, 1))
     name: str | None = None
     things: list[Thing] = field(default_factory=list)
     head_comment: str = None

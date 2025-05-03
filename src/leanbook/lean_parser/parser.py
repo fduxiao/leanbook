@@ -2,25 +2,51 @@ from dataclasses import dataclass
 from functools import update_wrapper
 
 
+@dataclass()
+class Pos:
+    index: int
+    line: int
+    col: int
+
+    def copy(self):
+        return Pos(self.index, self.line, self.col)
+
+
 class SourceContext:
-    def __init__(self, text: str, pos=0):
+    def __init__(self, text: str):
         self.text = text
-        self.pos = pos
+        self.index = 0
+        self.line = 1
+        self.col = 1
 
     def look(self, n=1):
-        r = self.text[self.pos : self.pos + n]
-        if self.pos + n > len(self.text):
+        start = self.index
+        r = self.text[start : start + n]
+        if start + n > len(self.text):
             return None
         return r
 
     def at(self, n=0):
-        n += self.pos
+        n += self.index
         if n >= len(self.text):
             return None
         return self.text[n]
 
     def shift(self, n=1):
-        self.pos += n
+        if n < 0:
+            raise ValueError("Don't shift back")
+        start = self.index
+        end = start + n
+        n_lines = self.text.count("\n", start, end)
+        self.line += n_lines
+        self.index = end
+        # calculate column number
+        if n_lines == 0:
+            # the same line
+            self.col += n
+            return
+        r_index = self.text.rfind("\n", start, end)
+        self.col = end - r_index
 
     def take(self, n=1):
         text = self.look(n)
@@ -30,23 +56,26 @@ class SourceContext:
         return text
 
     def end(self):
-        return self.pos >= len(self.text)
+        return self.index >= len(self.text)
 
     def rest(self):
-        return self.text[self.pos :]
+        return self.text[self.index :]
 
     def find(self, sub, start=0):
-        index = self.text.find(sub, self.pos + start)
+        index = self.text.find(sub, self.index + start)
         if index < 0:
             return None
-        return index - self.pos
+        return index - self.index
 
-    def get_line_number(self):
-        before = self.text[: self.pos]
-        return before.count("\n") + 1
+    @property
+    def pos(self):
+        return Pos(self.index, self.line, self.col)
 
-    def __repr__(self):
-        return f"SourceContext(line={self.get_line_number()}, pos={self.pos})"
+    @pos.setter
+    def pos(self, pos: Pos):
+        self.index = pos.index
+        self.line = pos.line
+        self.col = pos.col
 
 
 @dataclass(init=False)
@@ -67,8 +96,8 @@ class BaseParser:
     def parse(self, ctx: SourceContext):
         return Fail(ctx)
 
-    def parse_str(self, text: str, pos=0):
-        return self.parse(SourceContext(text, pos=pos))
+    def parse_str(self, text: str):
+        return self.parse(SourceContext(text))
 
     def __or__(self, other: "BaseParser") -> "BaseParser":
         return OrElse(self, other)
