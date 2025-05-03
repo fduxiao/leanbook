@@ -35,92 +35,58 @@ class TestLexer(unittest.TestCase):
             "import a.else\n"
             " /--doc string-/def a := 2 \n"
             '"/-" yz /- comme/--/nt-/ xz  '
+            "#check x = 2\n"
             "section abc end abc  "
         )
         ctx = SourceContext(text)
-        tk = parser.parse(ctx)
-        self.assertEqual(tk, token.ModuleComment(pos=2, content="/-!aaa-/"))
-        self.assertTrue(text[tk.pos :].startswith("/-!aaa-/"))
 
-        tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Keyword(pos=11, content="import"))
-        self.assertTrue(text[tk.pos :].startswith("import"))
+        def assert_parse(token_type, pos, content=None):
+            tk = parser.parse(ctx)
+            self.assertEqual(tk, token_type(pos=pos, content=content))
+            if content is None:
+                self.assertIsNone(tk.content)
+            else:
+                self.assertTrue(text[pos:].startswith(content))
 
-        tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Word(pos=18, content="something"))
-        self.assertTrue(text[tk.pos :].startswith("something"))
+        assert_parse(token.ModuleComment, pos=2, content="/-!aaa-/")
+        assert_parse(token.Command, pos=11, content="import")
+        assert_parse(token.Identifier, pos=18, content="something")
+        assert_parse(token.Code, pos=28, content="\\abc")
+        assert_parse(token.Command, pos=33, content="import")
+        assert_parse(token.Identifier, pos=40, content="a.else")
+        assert_parse(token.DocString, pos=48, content="/--doc string-/")
+        assert_parse(token.Command, pos=63, content="def")
+        assert_parse(token.Identifier, pos=67, content="a")
+        assert_parse(token.Code, pos=69, content=':= 2 \n"/-" yz')
+        assert_parse(token.Comment, pos=83, content="/- comme/--/nt-/")
+        assert_parse(token.Identifier, pos=100, content="xz")
+        assert_parse(token.Command, pos=104, content="#check")
+        assert_parse(token.Identifier, pos=111, content="x")
+        assert_parse(token.Code, pos=113, content="= 2")
+        assert_parse(token.Command, pos=117, content="section")
+        assert_parse(token.Identifier, pos=125, content="abc")
+        assert_parse(token.Command, pos=129, content="end")
+        assert_parse(token.Identifier, pos=133, content="abc")
 
-        tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Code(pos=28, content="\\abc"))
-        self.assertTrue(text[tk.pos :].startswith("\\abc"))
-
-        tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Keyword(pos=33, content="import"))
-        self.assertTrue(text[tk.pos :].startswith("import"))
-
-        tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Word(pos=40, content="a.else"))
-        self.assertTrue(text[tk.pos :].startswith("a.else"))
-
-        tk = parser.parse(ctx)
-        self.assertEqual(tk, token.DocString(pos=48, content="/--doc string-/"))
-        self.assertTrue(text[tk.pos :].startswith("/--doc string-/"))
-
-        tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Keyword(pos=63, content="def"))
-        self.assertTrue(text[tk.pos :].startswith("def"))
-
-        tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Word(pos=67, content="a"))
-        self.assertTrue(text[tk.pos :].startswith("a"))
-
-        tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Code(pos=69, content=':= 2 \n"/-" yz'))
-        self.assertTrue(text[tk.pos :].startswith(':= 2 \n"/-" yz'))
-
-        tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Comment(pos=83, content="/- comme/--/nt-/"))
-        self.assertTrue(text[tk.pos :].startswith("/- comme/--/nt-/"))
-
-        tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Word(pos=100, content="xz"))
-        self.assertTrue(text[tk.pos :].startswith("xz"))
-
-        tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Keyword(pos=104, content="section"))
-        self.assertTrue(text[tk.pos :].startswith("section"))
-
-        tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Word(pos=112, content="abc"))
-        self.assertTrue(text[tk.pos :].startswith("abc"))
-
-        tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Keyword(pos=116, content="end"))
-        self.assertTrue(text[tk.pos :].startswith("end"))
-
-        tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Word(pos=120, content="abc"))
-        self.assertTrue(text[tk.pos :].startswith("abc"))
-
-        # spaces at the end
         self.assertFalse(ctx.end())
-
-        tk = parser.parse(ctx)
-        self.assertEqual(tk, token.End(pos=125))
+        assert_parse(token.End, pos=138)
         self.assertTrue(ctx.end())
 
-    def test_word(self):
-        self.assertEqual(lexer.word.parse_str("def a := 2"), "def")
-        self.assertEqual(lexer.keyword.parse_str("def a := 2"), "def")
+    def test_command(self):
+        self.assertEqual(lexer.identifier.parse_str("def a := 2"), "def")
+        self.assertEqual(lexer.command.parse_str("def a := 2"), "def")
 
-        self.assertEqual(lexer.word.parse_str("defa x y z"), "defa")
-        self.assertIs(lexer.keyword.parse_str("defa x y z"), Fail)
+        self.assertEqual(lexer.identifier.parse_str("defa x y z"), "defa")
+        self.assertIs(lexer.command.parse_str("defa x y z"), Fail)
 
-        self.assertEqual(lexer.word.parse_str("def.a x y z"), "def.a")
-        self.assertIs(lexer.keyword.parse_str("def.a x y z"), Fail)
+        self.assertEqual(lexer.identifier.parse_str("def.a x y z"), "def.a")
+        self.assertIs(lexer.command.parse_str("def.a x y z"), Fail)
+
+        self.assertEqual(lexer.identifier.parse_str("def_a x y z"), "def_a")
+        self.assertIs(lexer.command.parse_str("def_a x y z"), Fail)
 
         # This may be fixed later
-        self.assertEqual(lexer.word.parse_str("0defa x y z"), "0defa")
+        self.assertEqual(lexer.identifier.parse_str("0defa x y z"), "0defa")
 
 
 if __name__ == "__main__":

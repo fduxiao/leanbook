@@ -28,12 +28,12 @@ class DocString(ModuleComment):
 
 
 @dataclass()
-class Word(Token):
+class Identifier(Token):
     pass
 
 
 @dataclass()
-class Keyword(Word):
+class Command(Token):
     pass
 
 

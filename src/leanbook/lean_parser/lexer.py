@@ -1,6 +1,6 @@
 import re
 
-from .parser import MonadicParser, get_ctx, Fail, TryFail
+from .parser import MonadicParser, Fail, TryFail
 from . import parser, token
 
 
@@ -49,12 +49,12 @@ class LineComment(MonadicParser):
 line_comment = LineComment()
 
 
-class Word(MonadicParser):
+class Identifier(MonadicParser):
     def __init__(self):
-        self.pattern = re.compile(r"[\w.]*")
+        self.pattern = re.compile(r"[\w.]+")
 
     def do(self):
-        ctx = yield get_ctx
+        ctx = yield parser.get_ctx
         match = self.pattern.match(ctx.text, ctx.pos)
         if match is None:
             return Fail
@@ -65,20 +65,45 @@ class Word(MonadicParser):
         return ctx.text[start:end]
 
 
-word = Word()
+identifier = Identifier()
 
 
-class Keyword(MonadicParser):
-    keywords = ["def", "inductive", "instance", "namespace", "section", "end", "import"]
+class Command(MonadicParser):
+    commands = [
+        # declarations
+        "def",
+        "abbrev",
+        "inductive",
+        "instance",
+        "class",
+        # sections
+        "namespace",
+        "section",
+        "end",
+        "import",
+        # directives
+        "#check",
+        "#eval",
+    ]
 
     def do(self):
-        w = yield word
-        if w in self.keywords:
+        ctx = yield parser.get_ctx
+        for w in self.commands:
+            n = len(w)
+            if ctx.look(n) != w:
+                continue
+            x = ctx.at(n)
+            if x is not None:
+                if x == "." or x == "_":
+                    continue
+                if x.isalnum():
+                    continue
+            ctx.pos += n
             return w
         return Fail
 
 
-keyword = Keyword()
+command = Command()
 
 
 class CodeParser(MonadicParser):
@@ -96,8 +121,8 @@ class CodeParser(MonadicParser):
             if ctx.look(2) == "--":
                 break
             # stop at keywords
-            kw = yield keyword.try_look()
-            if kw is not TryFail:
+            cmd = yield command.try_look()
+            if cmd is not TryFail:
                 break
             result += ctx.take(1)
         return result
@@ -131,13 +156,13 @@ class Lexer(MonadicParser):
             x = x.strip() + "\n"
             return token.Comment(pos, x)
 
-        kw = yield keyword.try_fail()
-        if kw is not TryFail:
-            return token.Keyword(pos, kw)
+        cmd = yield command.try_fail()
+        if cmd is not TryFail:
+            return token.Command(pos, cmd)
 
-        w = yield word.try_fail()
+        w = yield identifier.try_fail()
         if w is not TryFail:
-            return token.Word(pos, w)
+            return token.Identifier(pos, w)
 
         # read code
         x = yield code

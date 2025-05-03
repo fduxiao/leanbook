@@ -12,6 +12,12 @@ class SourceContext:
             return None
         return r
 
+    def at(self, n=0):
+        n += self.pos
+        if n >= len(self.text):
+            return None
+        return self.text[n]
+
     def shift(self, n=1):
         self.pos += n
 
