@@ -42,17 +42,18 @@ class SourceContext:
         return index - self.pos
 
     def get_line_number(self):
-        before = self.text[:self.pos]
-        return before.count('\n') + 1
+        before = self.text[: self.pos]
+        return before.count("\n") + 1
 
     def __repr__(self):
-        return f'SourceContext(line={self.get_line_number()}, pos={self.pos})'
+        return f"SourceContext(line={self.get_line_number()}, pos={self.pos})"
 
 
 @dataclass(init=False)
 class Fail:
     ctx: SourceContext
     args: tuple
+
     def __init__(self, ctx, *args):
         self.ctx = ctx
         self.args = args
@@ -155,6 +156,17 @@ def parser_do(func) -> MonadicParser:
     return parser
 
 
+class EOF(BaseParser):
+    def parse(self, ctx: SourceContext):
+        x = ctx.look(1)
+        if x is None:
+            return None
+        return Fail(f"Expect EOF, but got `{x}`")
+
+
+eof = EOF()
+
+
 class String(BaseParser):
     def __init__(self, s: str):
         self.s = s
@@ -165,7 +177,7 @@ class String(BaseParser):
             return Fail(ctx, "Unexpected EOF")
         if self.s == read:
             return self.s
-        return Fail(ctx, f"Expect {self.s}, but got {read}")
+        return Fail(ctx, f"Expect `{self.s}`, but got `{read}`")
 
 
 class Many(BaseParser):
@@ -191,7 +203,7 @@ class Any(BaseParser):
     def parse(self, ctx: SourceContext):
         ch = ctx.take(self.n)
         if ch is None:
-            return Fail(ctx, f'Unable to take {self.n} chars')
+            return Fail(ctx, f"Unable to take {self.n} chars")
         return ch
 
 

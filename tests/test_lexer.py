@@ -27,6 +27,14 @@ class TestLexer(unittest.TestCase):
         helper.assert_complete_parse("/- a b-/")
         helper.assert_complete_parse("/- /-a b-/-/")
 
+    def test_parser_line_comment(self):
+        parser = lexer.LineComment()
+        helper = ParserHelper(self, parser)
+
+        helper.assert_complete_parse("-- abcd\n")
+        helper.assert_complete_parse("--")
+        helper.assert_complete_parse("--\n")
+
     def test_lexer(self):
         parser = lexer.lexer
         text = (

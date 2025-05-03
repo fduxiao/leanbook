@@ -66,7 +66,7 @@ class DeclParser(MonadicParser):
         name = None
         if not isinstance(tk, token.Identifier):
             if decl_type != "instance":
-                return Fail(f'Expect an identifier')
+                return Fail("Expect an identifier")
             # set back the pos
             ctx.pos = tk.pos
         else:

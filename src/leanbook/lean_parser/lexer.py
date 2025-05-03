@@ -36,14 +36,14 @@ block_comment = BlockComment()
 class LineComment(MonadicParser):
     def __init__(self):
         self.start = parser.String("--")
-        self.end = parser.String("\n")
+        self.end = parser.String("\n") | parser.eof
         self.until = parser.AnyUntil(self.end)
 
     def do(self):
         yield self.start
-        x = yield self.end
+        x = yield self.until
         yield self.end
-        return x
+        return "--" + x
 
 
 line_comment = LineComment()
@@ -101,7 +101,7 @@ class Command(MonadicParser):
                     continue
             ctx.pos += n
             return w
-        return Fail(ctx, f'Expect a command')
+        return Fail(ctx, "Expect a command")
 
 
 command = Command()
