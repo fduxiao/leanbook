@@ -1,54 +1,79 @@
 from dataclasses import dataclass, field
-from typing import Union
 
 from . import token, lexer
 from .parser import MonadicParser, Fail, get_ctx, Pos
 
-Comment = token.Comment
-ModuleComment = token.ModuleComment
-Code = token.Code
+
+@dataclass()
+class Element:
+    pos: Pos
+    def symbols(self):
+        yield from ()
 
 
 @dataclass()
-class Import:
-    pos: Pos
+class Comment(Element):
+    content: str
+
+
+@dataclass()
+class ModuleComment(Element):
+    content: str
+
+
+@dataclass()
+class Code(Element):
+    content: str
+
+
+
+@dataclass()
+class Import(Element):
     name: str
 
 
 @dataclass()
-class Declaration:
+class Declaration(Element):
     """Things that can be referred to"""
-
-    pos: Pos
     type: str
     name: str | None
     body: str
     modifier: str = ""
     doc_string: str = ""
 
-
-Thing = Union[ModuleComment | Code | Import | Declaration | Comment, "Section"]
+    def symbols(self):
+        yield self.pos, self.name
 
 
 @dataclass()
-class Section:
+class Group(Element):
     pos: Pos = field(default_factory=lambda: Pos(0, 1, 1))
     name: str | None = None
-    things: list[Thing] = field(default_factory=list)
-    head_comment: str = None
+    elements: list[Element] = field(default_factory=list)
 
-    def append(self, thing: Thing):
-        self.things.append(thing)
+    def append(self, element: Element):
+        self.elements.append(element)
         return self
+
+    def symbols(self):
+        for one in self.elements:
+            for pos, sym in one.symbols():
+                if self.name is not None:
+                    sym = f"{self.name}.{sym}"
+                yield pos, sym
 
 
 @dataclass()
-class Namespace(Section):
+class Section(Group):
+    pass
+
+@dataclass()
+class Namespace(Group):
     pass
 
 
 @dataclass()
-class Module(Section):
+class Module(Group):
     pass
 
 
@@ -97,19 +122,21 @@ class DeclParser(MonadicParser):
 decl_parser = DeclParser()
 
 
-class SectionParser(MonadicParser):
-    def __init__(self, section_class=Section):
-        self.section_class = section_class
+class GroupParser(MonadicParser):
+    def __init__(self, group_class=Group):
+        self.group_class = group_class
 
     def do(self):
         ctx = yield get_ctx
-        section = self.section_class()
+        section = self.group_class()
         while True:
             tk = yield lexer.any_token
             if isinstance(tk, token.EOF):
                 break
             if isinstance(tk, token.ModuleComment):
-                section.append(tk)
+                section.append(ModuleComment(
+                    pos=tk.pos, content=tk.content
+                ))
                 continue
             if isinstance(tk, token.DocString):
                 decl = yield decl_parser
@@ -117,9 +144,9 @@ class SectionParser(MonadicParser):
                 section.append(decl)
                 continue
             if isinstance(tk, token.Comment):
-                if section.head_comment is None:
-                    section.head_comment = tk.content
-                section.append(tk)
+                section.append(Comment(
+                    pos=tk.pos, content=tk.content
+                ))
                 continue
             if isinstance(tk, token.DeclModifier):
                 decl = yield decl_parser
@@ -140,6 +167,6 @@ class SectionParser(MonadicParser):
         return section
 
 
-section_parser = SectionParser(Section)
-namespace_parser = SectionParser(Namespace)
-module_parser = SectionParser(Module)
+section_parser = GroupParser(Section)
+namespace_parser = GroupParser(Namespace)
+module_parser = GroupParser(Module)

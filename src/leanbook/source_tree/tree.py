@@ -42,6 +42,15 @@ class SourceTree:
 
     def build_symbols(self):
         self.symbol_map.clear()
+        for rel_path, file in self.file_map.items():
+            module_symbol = ".".join(rel_path.parts)
+            if module_symbol.endswith(".lean"):
+                module_symbol = module_symbol[:-5]
+            module = file.module
+            module.name = module_symbol
+            self.symbol_map[module_symbol] = (rel_path, None)
+            for pos, symbol in file.module.symbols():
+                self.symbol_map[symbol] = (rel_path, pos)
 
     def build_tree(self):
         self.scan_files()

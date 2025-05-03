@@ -15,8 +15,10 @@ class TargetTree:
 
     def render_file(self, rel_path: Path):
         file: SourceFile = self.source_tree.file_map[rel_path]
-        print(str(rel_path), file.content[:10])
+        print(str(rel_path), file.path)
 
     def render_all(self):
+        for key, pos in self.source_tree.symbol_map.items():
+            print(key, pos)
         for rel_path in self.source_tree.file_map:
             self.render_file(rel_path)
