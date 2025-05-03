@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from functools import update_wrapper
 
 
@@ -40,9 +41,21 @@ class SourceContext:
             return None
         return index - self.pos
 
+    def get_line_number(self):
+        before = self.text[:self.pos]
+        return before.count('\n') + 1
 
+    def __repr__(self):
+        return f'SourceContext(line={self.get_line_number()}, pos={self.pos})'
+
+
+@dataclass(init=False)
 class Fail:
-    pass
+    ctx: SourceContext
+    args: tuple
+    def __init__(self, ctx, *args):
+        self.ctx = ctx
+        self.args = args
 
 
 class TryFail:
@@ -51,7 +64,7 @@ class TryFail:
 
 class BaseParser:
     def parse(self, ctx: SourceContext):
-        return Fail
+        return Fail(ctx)
 
     def parse_str(self, text: str, pos=0):
         return self.parse(SourceContext(text, pos=pos))
@@ -73,7 +86,7 @@ class TryParser(BaseParser):
     def parse(self, ctx: SourceContext):
         pos = ctx.pos
         r = self.parser.parse(ctx)
-        if r is Fail:
+        if isinstance(r, Fail):
             ctx.pos = pos
             return TryFail
         return r
@@ -87,7 +100,7 @@ class OrElse(BaseParser):
     def parse(self, ctx: SourceContext):
         pos = ctx.pos
         r = self.p1.parse(ctx)
-        if r is Fail:
+        if isinstance(r, Fail):
             ctx.pos = pos
             return self.p2.parse(ctx)
         return r
@@ -100,7 +113,7 @@ class TryLookParser(BaseParser):
     def parse(self, ctx: SourceContext):
         pos = ctx.pos
         r = self.parser.parse(ctx)
-        if r is Fail:
+        if isinstance(r, Fail):
             r = TryFail
         ctx.pos = pos
         return r
@@ -125,8 +138,8 @@ class MonadicParser(BaseParser):
             try:
                 parser = generator.send(value)
                 result = parser.parse(ctx)
-                if result is Fail:
-                    return Fail
+                if isinstance(result, Fail):
+                    return result
                 value = result
             except StopIteration as err:
                 return err.value
@@ -149,10 +162,10 @@ class String(BaseParser):
     def parse(self, ctx: SourceContext):
         read = ctx.take(len(self.s))
         if read is None:
-            return Fail
+            return Fail(ctx, "Unexpected EOF")
         if self.s == read:
             return self.s
-        return Fail
+        return Fail(ctx, f"Expect {self.s}, but got {read}")
 
 
 class Many(BaseParser):
@@ -164,7 +177,7 @@ class Many(BaseParser):
         while True:
             pos = ctx.pos
             one = self.parser.parse(ctx)
-            if one is Fail:
+            if isinstance(one, Fail):
                 ctx.pos = pos
                 break
             result.append(one)
@@ -178,7 +191,7 @@ class Any(BaseParser):
     def parse(self, ctx: SourceContext):
         ch = ctx.take(self.n)
         if ch is None:
-            return Fail
+            return Fail(ctx, f'Unable to take {self.n} chars')
         return ch
 
 
@@ -206,7 +219,7 @@ class AnyUntil(BaseParser):
         while True:
             # try parse until
             pos = ctx.pos
-            if self.until.parse(ctx) is not Fail:
+            if not isinstance(self.until.parse(ctx), Fail):
                 # restore the state
                 ctx.pos = pos
                 break

@@ -18,4 +18,4 @@ class ParserHelper:
         self.test_case.assertTrue(ctx.end())
 
     def assert_fail(self, x):
-        self.test_case.assertIs(self.parser.parse_str(x), Fail)
+        self.test_case.assertIsInstance(self.parser.parse_str(x), Fail)

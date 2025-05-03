@@ -82,13 +82,13 @@ class TestLexer(unittest.TestCase):
         self.assertEqual(lexer.command.parse_str("def a := 2"), "def")
 
         self.assertEqual(lexer.identifier.parse_str("defa x y z"), "defa")
-        self.assertIs(lexer.command.parse_str("defa x y z"), Fail)
+        self.assertIsInstance(lexer.command.parse_str("defa x y z"), Fail)
 
         self.assertEqual(lexer.identifier.parse_str("def.a x y z"), "def.a")
-        self.assertIs(lexer.command.parse_str("def.a x y z"), Fail)
+        self.assertIsInstance(lexer.command.parse_str("def.a x y z"), Fail)
 
         self.assertEqual(lexer.identifier.parse_str("def_a x y z"), "def_a")
-        self.assertIs(lexer.command.parse_str("def_a x y z"), Fail)
+        self.assertIsInstance(lexer.command.parse_str("def_a x y z"), Fail)
 
         # This may be fixed later
         self.assertEqual(lexer.identifier.parse_str("0defa x y z"), "0defa")

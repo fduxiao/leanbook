@@ -8,14 +8,14 @@ class TestParser(unittest.TestCase):
     def test_base_parser(self):
         parser = BaseParser()
         r = parser.parse_str("aabbccdd")
-        self.assertIs(r, Fail)
+        self.assertIsInstance(r, Fail)
 
     def test_or_else(self):
         p1 = String("aa")
         p2 = String("ab")
         p3 = String("bb")
         parser = p1 | p2 | p3
-        self.assertIs(Fail, parser.parse_str("a"))
+        self.assertIsInstance(parser.parse_str("a"), Fail)
         self.assertEqual("aa", parser.parse_str("aa"))
         self.assertEqual("ab", parser.parse_str("ab"))
         self.assertEqual("bb", parser.parse_str("bb"))

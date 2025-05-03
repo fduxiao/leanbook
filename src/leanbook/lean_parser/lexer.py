@@ -57,10 +57,10 @@ class Identifier(MonadicParser):
         ctx = yield parser.get_ctx
         match = self.pattern.match(ctx.text, ctx.pos)
         if match is None:
-            return Fail
+            return Fail(ctx, "Unexpected EOF")
         (start, end) = match.span(0)
         if start == end:
-            return Fail
+            return Fail(ctx, "Empty identifier")
         ctx.pos = end
         return ctx.text[start:end]
 
@@ -101,7 +101,7 @@ class Command(MonadicParser):
                     continue
             ctx.pos += n
             return w
-        return Fail
+        return Fail(ctx, f'Expect a command')
 
 
 command = Command()
@@ -161,7 +161,7 @@ class Lexer(MonadicParser):
         if ctx.look(2) == "@[":
             index = ctx.find("]")
             if index < 0:
-                return Fail
+                return Fail(ctx, "Expect ']'")
             x = ctx.take(index + 1)
             return token.DeclModifier(pos, x)
 

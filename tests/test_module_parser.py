@@ -29,7 +29,7 @@ class TestModuleParser(unittest.TestCase):
             ),
         )
 
-        self.assertIs(decl_parser.parse_str("""def := x"""), Fail)
+        self.assertIsInstance(decl_parser.parse_str("""def := x"""), Fail)
 
 
 if __name__ == "__main__":
