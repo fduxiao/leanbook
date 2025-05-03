@@ -9,3 +9,5 @@ todo:
 
 format:
     uv tool run ruff format
+
+pre-commit: test check format

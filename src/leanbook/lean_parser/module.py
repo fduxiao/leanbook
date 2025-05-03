@@ -1,0 +1,129 @@
+from dataclasses import dataclass, field
+from typing import Union
+
+from . import token
+from .lexer import lexer
+from .parser import MonadicParser, Fail, get_ctx
+
+ModuleComment = token.ModuleComment
+Code = token.Code
+
+
+@dataclass()
+class Declaration:
+    """Things that can be referred to"""
+
+    pos: int
+    type: str
+    name: str | None
+    body: str
+    modifier: str = ""
+    doc_string: str = ""
+
+
+Thing = Union[ModuleComment | Code | Declaration, "Section"]
+
+
+@dataclass()
+class Section:
+    pos: int = 0
+    name: str | None = None
+    things: list[Thing] = field(default_factory=list)
+
+    def append(self, thing: Thing):
+        self.things.append(thing)
+        return self
+
+
+@dataclass()
+class Namespace(Section):
+    pass
+
+
+@dataclass()
+class Module(Section):
+    pass
+
+
+class DeclParser(MonadicParser):
+    def do(self):
+        ctx = yield get_ctx
+        # read a token
+        tk = yield lexer
+        decl_modifier = ""
+        if isinstance(tk, token.DeclModifier):
+            decl_modifier = tk.content
+            tk = yield lexer
+        # it must be a command
+        if not isinstance(tk, token.Command):
+            return Fail
+        if not tk.is_declaration():
+            return Fail
+        decl_type = tk.content
+        decl_pos = tk.pos
+        # read the name
+        tk = yield lexer
+        name = None
+        if not isinstance(tk, token.Identifier):
+            if decl_type != "instance":
+                return Fail
+            # set back the pos
+            ctx.pos = tk.pos
+        else:
+            name = tk.content
+        # parse body
+        body = ""
+        ctx = yield get_ctx
+        while True:
+            pos = ctx.pos
+            tk = yield lexer
+            if isinstance(tk, token.End):
+                break
+            if isinstance(tk, token.Code):
+                body += tk.content
+            else:
+                ctx.pos = pos
+                break
+        return Declaration(decl_pos, decl_type, name, body, decl_modifier)
+
+
+decl_parser = DeclParser()
+
+
+class SectionParser(MonadicParser):
+    def __init__(self, section_class=Section):
+        self.section_class = section_class
+
+    def do(self):
+        ctx = yield get_ctx
+        section = self.section_class()
+        while True:
+            if ctx.end():
+                break
+            tk = yield lexer
+            if isinstance(tk, token.ModuleComment):
+                section.append(tk)
+                continue
+            if isinstance(tk, token.DocString):
+                decl = yield decl_parser
+                decl.doc_string = tk.content
+                section.append(decl)
+                continue
+            if isinstance(tk, token.DeclModifier):
+                decl = yield decl_parser
+                decl.modifier = tk.content
+                section.append(decl)
+                continue
+            if isinstance(tk, token.Command):
+                if tk.is_declaration():
+                    ctx.pos = tk.pos
+                    decl = yield decl_parser
+                    section.append(decl)
+                    continue
+            return Fail
+        return section
+
+
+section_parser = SectionParser(Section)
+namespace_parser = SectionParser(Namespace)
+module_parser = SectionParser(Module)

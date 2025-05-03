@@ -34,7 +34,15 @@ class Identifier(Token):
 
 @dataclass()
 class Command(Token):
-    pass
+    def is_declaration(self):
+        return self.content in [
+            "def",
+            "abbrev",
+            "inductive",
+            "theorem",
+            "instance",
+            "class",
+        ]
 
 
 @dataclass()

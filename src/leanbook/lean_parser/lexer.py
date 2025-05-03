@@ -74,6 +74,7 @@ class Command(MonadicParser):
         "def",
         "abbrev",
         "inductive",
+        "theorem",
         "instance",
         "class",
         # sections
@@ -158,7 +159,7 @@ class Lexer(MonadicParser):
             x = x.strip() + "\n"
             return token.Comment(pos, x)
         if ctx.look(2) == "@[":
-            index = ctx.find(']')
+            index = ctx.find("]")
             if index < 0:
                 return Fail
             x = ctx.take(index + 1)
