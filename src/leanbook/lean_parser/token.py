@@ -4,6 +4,7 @@ from dataclasses import dataclass
 @dataclass()
 class Token:
     pos: int
+    content: str = None
 
 
 @dataclass()
@@ -13,7 +14,7 @@ class End(Token):
 
 @dataclass()
 class Comment(Token):
-    content: str
+    pass
 
 
 @dataclass()
@@ -28,7 +29,7 @@ class DocString(ModuleComment):
 
 @dataclass()
 class Word(Token):
-    word: str
+    pass
 
 
 @dataclass()
@@ -38,4 +39,4 @@ class Keyword(Word):
 
 @dataclass()
 class Code(Token):
-    content: str
+    pass

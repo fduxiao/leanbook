@@ -43,11 +43,11 @@ class TestLexer(unittest.TestCase):
         self.assertTrue(text[tk.pos :].startswith("/-!aaa-/"))
 
         tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Keyword(pos=11, word="import"))
+        self.assertEqual(tk, token.Keyword(pos=11, content="import"))
         self.assertTrue(text[tk.pos :].startswith("import"))
 
         tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Word(pos=18, word="something"))
+        self.assertEqual(tk, token.Word(pos=18, content="something"))
         self.assertTrue(text[tk.pos :].startswith("something"))
 
         tk = parser.parse(ctx)
@@ -55,11 +55,11 @@ class TestLexer(unittest.TestCase):
         self.assertTrue(text[tk.pos :].startswith("\\abc"))
 
         tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Keyword(pos=33, word="import"))
+        self.assertEqual(tk, token.Keyword(pos=33, content="import"))
         self.assertTrue(text[tk.pos :].startswith("import"))
 
         tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Word(pos=40, word="a.else"))
+        self.assertEqual(tk, token.Word(pos=40, content="a.else"))
         self.assertTrue(text[tk.pos :].startswith("a.else"))
 
         tk = parser.parse(ctx)
@@ -67,11 +67,11 @@ class TestLexer(unittest.TestCase):
         self.assertTrue(text[tk.pos :].startswith("/--doc string-/"))
 
         tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Keyword(pos=63, word="def"))
+        self.assertEqual(tk, token.Keyword(pos=63, content="def"))
         self.assertTrue(text[tk.pos :].startswith("def"))
 
         tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Word(pos=67, word="a"))
+        self.assertEqual(tk, token.Word(pos=67, content="a"))
         self.assertTrue(text[tk.pos :].startswith("a"))
 
         tk = parser.parse(ctx)
@@ -83,23 +83,23 @@ class TestLexer(unittest.TestCase):
         self.assertTrue(text[tk.pos :].startswith("/- comme/--/nt-/"))
 
         tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Word(pos=100, word="xz"))
+        self.assertEqual(tk, token.Word(pos=100, content="xz"))
         self.assertTrue(text[tk.pos :].startswith("xz"))
 
         tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Keyword(pos=104, word="section"))
+        self.assertEqual(tk, token.Keyword(pos=104, content="section"))
         self.assertTrue(text[tk.pos :].startswith("section"))
 
         tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Word(pos=112, word="abc"))
+        self.assertEqual(tk, token.Word(pos=112, content="abc"))
         self.assertTrue(text[tk.pos :].startswith("abc"))
 
         tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Keyword(pos=116, word="end"))
+        self.assertEqual(tk, token.Keyword(pos=116, content="end"))
         self.assertTrue(text[tk.pos :].startswith("end"))
 
         tk = parser.parse(ctx)
-        self.assertEqual(tk, token.Word(pos=120, word="abc"))
+        self.assertEqual(tk, token.Word(pos=120, content="abc"))
         self.assertTrue(text[tk.pos :].startswith("abc"))
 
         # spaces at the end
