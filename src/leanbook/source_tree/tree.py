@@ -18,6 +18,7 @@ def iter_subtree(path: Path):
 class SourceTree:
     def __init__(self, path: str | Path):
         self.path = Path(path)
+        self.top_modules = []
         self.file_map: dict[Path, SourceFile] = {}
         self.symbol_map = {}
 
@@ -25,16 +26,25 @@ class SourceTree:
     def lakefile_toml(self):
         return self.path / "lakefile.toml"
 
-    def scan_files(self):
-        self.file_map.clear()
+    def iter_files(self):
+
         with open(self.lakefile_toml) as file:
             lakefile = tomllib.loads(file.read())
         dirs = lakefile["lean_lib"]
         for one in dirs:
+            top_module = self.path / f'{one["name"]}.lean'
+            if top_module.exists():
+                rel_path = top_module.relative_to(self.path)
+                self.top_modules.append(rel_path)
+                yield rel_path, SourceFile(top_module.absolute())
             dir_path = self.path / one["name"]
             for file_path in iter_subtree(dir_path):
-                file = SourceFile(file_path.absolute())
-                self.file_map[file_path.relative_to(self.path)] = file
+                yield (file_path.relative_to(self.path)), SourceFile(file_path.absolute())
+
+    def scan_files(self):
+        self.file_map.clear()
+        for rel_path, file in self.iter_files():
+            self.file_map[rel_path] = file
 
     def read_files(self):
         for file in self.file_map.values():
