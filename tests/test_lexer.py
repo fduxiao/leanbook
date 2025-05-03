@@ -86,19 +86,19 @@ class TestLexer(unittest.TestCase):
         self.assertEqual(len(ctx.text), 146)
 
     def test_command(self):
-        self.assertEqual(lexer.identifier_parser.parse_str("def a := 2"), "def")
         self.assertEqual(lexer.command_parser.parse_str("def a := 2"), "def")
-
-        self.assertEqual(lexer.identifier_parser.parse_str("defa x y z"), "defa")
         self.assertIsInstance(lexer.command_parser.parse_str("defa x y z"), Fail)
-
-        self.assertEqual(lexer.identifier_parser.parse_str("def.a x y z"), "def.a")
         self.assertIsInstance(lexer.command_parser.parse_str("def.a x y z"), Fail)
-
-        self.assertEqual(lexer.identifier_parser.parse_str("def_a x y z"), "def_a")
         self.assertIsInstance(lexer.command_parser.parse_str("def_a x y z"), Fail)
 
-        # This may be fixed later
+    def test_identifier(self):
+        self.assertEqual(lexer.identifier_parser.parse_str("def a := 2"), "def")
+        self.assertEqual(lexer.identifier_parser.parse_str("defa x y z"), "defa")
+        self.assertEqual(lexer.identifier_parser.parse_str("def.a x y z"), "def.a")
+        self.assertEqual(lexer.identifier_parser.parse_str("def_a x y z"), "def_a")
+        self.assertEqual(lexer.identifier_parser.parse_str("def_a.{u} x y z"), "def_a")
+        # These should raise an error, but them won't happen in our case
+        self.assertEqual(lexer.identifier_parser.parse_str("def.a. x y z"), "def.a")
         self.assertEqual(lexer.identifier_parser.parse_str("0defa x y z"), "0defa")
 
 

@@ -51,19 +51,22 @@ line_comment = LineComment()
 
 class Identifier(MonadicParser):
     def __init__(self):
-        self.pattern = re.compile(r"[\w.]+")
+        self.pattern = re.compile(r"\w+(\.(\w+))*")
 
     def do(self):
         ctx = yield parser.get_ctx
         pos = ctx.pos
         match = self.pattern.match(ctx.text, pos.index)
         if match is None:
-            return Fail(ctx, "Unexpected EOF")
+            return Fail(ctx, "Expect identifier")
         (start, end) = match.span(0)
+        if start != pos.index:
+            return Fail(ctx, f"Expect identifier, but got `{ctx.at()}`")
         if start == end:
             return Fail(ctx, "Empty identifier")
         ctx.shift(end - pos.index)
-        return ctx.text[start:end]
+        result: str = ctx.text[start:end]
+        return result
 
 
 identifier_parser = Identifier()
