@@ -5,8 +5,15 @@ from . import token
 from .lexer import lexer
 from .parser import MonadicParser, Fail, get_ctx
 
+Comment = token.Comment
 ModuleComment = token.ModuleComment
 Code = token.Code
+
+
+@dataclass()
+class Import:
+    pos: int
+    name: str
 
 
 @dataclass()
@@ -21,7 +28,7 @@ class Declaration:
     doc_string: str = ""
 
 
-Thing = Union[ModuleComment | Code | Declaration, "Section"]
+Thing = Union[ModuleComment | Code | Import | Declaration | Comment, "Section"]
 
 
 @dataclass()
@@ -29,6 +36,7 @@ class Section:
     pos: int = 0
     name: str | None = None
     things: list[Thing] = field(default_factory=list)
+    head_comment: str = None
 
     def append(self, thing: Thing):
         self.things.append(thing)
@@ -98,9 +106,9 @@ class SectionParser(MonadicParser):
         ctx = yield get_ctx
         section = self.section_class()
         while True:
-            if ctx.end():
-                break
             tk = yield lexer
+            if isinstance(tk, token.End):
+                break
             if isinstance(tk, token.ModuleComment):
                 section.append(tk)
                 continue
@@ -108,6 +116,11 @@ class SectionParser(MonadicParser):
                 decl = yield decl_parser
                 decl.doc_string = tk.content
                 section.append(decl)
+                continue
+            if isinstance(tk, token.Comment):
+                if section.head_comment is None:
+                    section.head_comment = tk.content
+                section.append(tk)
                 continue
             if isinstance(tk, token.DeclModifier):
                 decl = yield decl_parser
@@ -119,6 +132,12 @@ class SectionParser(MonadicParser):
                     ctx.pos = tk.pos
                     decl = yield decl_parser
                     section.append(decl)
+                    continue
+                if tk.content == "import":
+                    tk = yield lexer
+                    if not isinstance(tk, token.Identifier):
+                        return Fail(ctx, f"Expect identifier, but got {tk}")
+                    section.append(Import(tk.pos, tk.content))
                     continue
             return Fail(ctx, f"Unknown Token {tk}")
         return section

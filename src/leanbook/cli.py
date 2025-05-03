@@ -27,6 +27,16 @@ def serve(args):
     print(args)
 
 
+def parse(args):
+    from .lean_parser import module_parser, Module
+
+    path = Path(args.path)
+    with open(path) as file:
+        content = file.read()
+    module: Module = module_parser.parse_str(content)
+    print(module)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="build an HTML book from a lean package"
@@ -39,10 +49,14 @@ def main():
     serve_parser.add_argument("path", default=".")
     serve_parser.add_argument("--output", "-o", default=None)
 
-    build_parser = sub_cmds.add_parser("build", description="")
+    build_parser = sub_cmds.add_parser("build", description="build html files")
     build_parser.set_defaults(func=build)
     build_parser.add_argument("path", default=".", nargs="?")
     build_parser.add_argument("--output", "-o", default=None)
+
+    parse_parser = sub_cmds.add_parser("parse", description="parse a single file")
+    parse_parser.set_defaults(func=parse)
+    parse_parser.add_argument("path")
 
     args = parser.parse_args()
     exit(args.func(args) or 0)

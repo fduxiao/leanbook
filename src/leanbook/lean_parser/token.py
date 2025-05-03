@@ -18,12 +18,12 @@ class Comment(Token):
 
 
 @dataclass()
-class ModuleComment(Comment):
+class ModuleComment(Token):
     pass
 
 
 @dataclass()
-class DocString(ModuleComment):
+class DocString(Token):
     pass
 
 
