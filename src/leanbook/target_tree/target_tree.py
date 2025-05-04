@@ -18,7 +18,6 @@ class TargetTree:
         print(str(rel_path), file.path)
 
     def render_all(self):
-        for key, pos in self.source_tree.symbol_map.items():
-            print(key, pos)
+        print(self.source_tree.symbol_tree.to_dict())
         for rel_path in self.source_tree.file_map:
             self.render_file(rel_path)

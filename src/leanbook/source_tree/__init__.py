@@ -1,2 +1,2 @@
 from .file import SourceFile as SourceFile
-from .tree import SourceTree as SourceTree
+from .source_tree import SourceTree as SourceTree

@@ -1,3 +1,3 @@
 """Target tree"""
 
-from .tree import TargetTree as TargetTree
+from .target_tree import TargetTree as TargetTree

@@ -7,6 +7,7 @@ from .parser import MonadicParser, Fail, get_ctx, Pos
 @dataclass()
 class Element:
     pos: Pos
+
     def symbols(self):
         yield from ()
 
@@ -26,7 +27,6 @@ class Code(Element):
     content: str
 
 
-
 @dataclass()
 class Import(Element):
     name: str
@@ -35,6 +35,7 @@ class Import(Element):
 @dataclass()
 class Declaration(Element):
     """Things that can be referred to"""
+
     type: str
     name: str | None
     body: str
@@ -66,6 +67,7 @@ class Group(Element):
 @dataclass()
 class Section(Group):
     pass
+
 
 @dataclass()
 class Namespace(Group):
@@ -134,9 +136,7 @@ class GroupParser(MonadicParser):
             if isinstance(tk, token.EOF):
                 break
             if isinstance(tk, token.ModuleComment):
-                section.append(ModuleComment(
-                    pos=tk.pos, content=tk.content
-                ))
+                section.append(ModuleComment(pos=tk.pos, content=tk.content))
                 continue
             if isinstance(tk, token.DocString):
                 decl = yield decl_parser
@@ -144,9 +144,7 @@ class GroupParser(MonadicParser):
                 section.append(decl)
                 continue
             if isinstance(tk, token.Comment):
-                section.append(Comment(
-                    pos=tk.pos, content=tk.content
-                ))
+                section.append(Comment(pos=tk.pos, content=tk.content))
                 continue
             if isinstance(tk, token.DeclModifier):
                 decl = yield decl_parser
