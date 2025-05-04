@@ -57,7 +57,8 @@ class PushScope(Element):
 
 @dataclass()
 class PopScope(Element):
-    pass
+    type: str
+    name: str | None = None
 
 
 @dataclass()
@@ -87,7 +88,7 @@ class Group(Element):
         yield PushScope(self.pos, self.type, name)
         for one in self.elements:
             yield from one.element_stream()
-        yield PopScope(self.end_pos)
+        yield PopScope(self.end_pos, self.type, self.name)
 
 
 @dataclass()
