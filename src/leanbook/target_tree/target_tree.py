@@ -20,8 +20,9 @@ class TargetTree:
         file: SourceFile = self.source_tree.file_map[rel_path]
         document = Document(self.ctx)
         print(rel_path, "\n")
-        for one in document.add_elements(file.module.element_stream()):
-            print(one.render_md())
+        document.add_elements(file.module.element_stream())
+        print(document.toc.list)
+        print(document.html)
         print("\n\n")
 
     def render_all(self):

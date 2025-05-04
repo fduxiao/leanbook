@@ -7,7 +7,9 @@ authors = [
     { name = "fduxiao", email = "9294979+fduxiao@users.noreply.github.com" }
 ]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "mistletoe>=1.4.0",
+]
 
 [build-system]
 requires = ["hatchling"]
