@@ -11,6 +11,9 @@ class Element:
     def symbols(self):
         yield from ()
 
+    def element_stream(self):
+        yield self
+
 
 @dataclass()
 class Comment(Element):
@@ -47,10 +50,23 @@ class Declaration(Element):
 
 
 @dataclass()
+class PushScope(Element):
+    type: str
+    name: str | None = None
+
+
+@dataclass()
+class PopScope(Element):
+    pass
+
+
+@dataclass()
 class Group(Element):
-    pos: Pos = field(default_factory=lambda: Pos(0, 1, 1))
+    end_pos: Pos = field(default_factory=lambda: Pos(0, 1, 1))
     name: str | None = None
     elements: list[Element] = field(default_factory=list)
+    add_name = True
+    type = ""
 
     def append(self, element: Element):
         self.elements.append(element)
@@ -59,24 +75,35 @@ class Group(Element):
     def symbols(self):
         for one in self.elements:
             for pos, sym in one.symbols():
-                if self.name is not None:
-                    sym = f"{self.name}.{sym}"
+                if self.add_name:
+                    if self.name is not None:
+                        sym = f"{self.name}.{sym}"
                 yield pos, sym
+
+    def element_stream(self):
+        name = None
+        if self.add_name:
+            name = self.name
+        yield PushScope(self.pos, self.type, name)
+        for one in self.elements:
+            yield from one.element_stream()
+        yield PopScope(self.end_pos)
 
 
 @dataclass()
 class Section(Group):
-    pass
+    add_name = False
+    type = "section"
 
 
 @dataclass()
 class Namespace(Group):
-    pass
+    type = "namespace"
 
 
 @dataclass()
 class Module(Group):
-    pass
+    type = "module"
 
 
 class DeclParser(MonadicParser):
@@ -130,7 +157,7 @@ class GroupParser(MonadicParser):
 
     def do(self):
         ctx = yield get_ctx
-        section = self.group_class()
+        section = self.group_class(ctx.pos)
         while True:
             tk = yield lexer.any_token
             if isinstance(tk, token.EOF):
@@ -162,6 +189,7 @@ class GroupParser(MonadicParser):
                     section.append(Import(tk.pos, tk.content))
                     continue
             return Fail(ctx, f"Unknown Token {tk}")
+        section.end_pos = ctx.pos
         return section
 
 
