@@ -16,10 +16,17 @@ def iter_subtree(path: Path):
             yield one
 
 
+def parse_module_name(rel_path: Path):
+    module_name = ".".join(rel_path.parts)
+    if module_name.endswith(".lean"):
+        module_name = module_name[:-5]
+    return module_name
+
+
 class SourceTree:
     def __init__(self, path: str | Path):
         self.path = Path(path)
-        self.top_modules = []
+        self.top_modules: dict[Path, str] = {}
         self.file_map: dict[Path, SourceFile] = {}
         self.symbol_tree = SymbolTree()
 
@@ -35,17 +42,25 @@ class SourceTree:
             top_module = self.path / f"{one['name']}.lean"
             if top_module.exists():
                 rel_path = top_module.relative_to(self.path)
-                self.top_modules.append(rel_path)
-                yield rel_path, SourceFile(top_module.absolute())
+                module_name = parse_module_name(rel_path)
+                self.top_modules[rel_path] = module_name
+                yield (
+                    rel_path,
+                    SourceFile(top_module.absolute(), module_name=module_name),
+                )
             dir_path = self.path / one["name"]
             for file_path in iter_subtree(dir_path):
+                rel_path = file_path.relative_to(self.path)
                 yield (
-                    (file_path.relative_to(self.path)),
-                    SourceFile(file_path.absolute()),
+                    rel_path,
+                    SourceFile(
+                        file_path.absolute(), module_name=parse_module_name(rel_path)
+                    ),
                 )
 
     def scan_files(self):
         self.file_map.clear()
+        file: SourceFile
         for rel_path, file in self.iter_files():
             self.file_map[rel_path] = file
 
@@ -56,12 +71,8 @@ class SourceTree:
     def build_symbols(self):
         self.symbol_tree.clear()
         for rel_path, file in self.file_map.items():
-            module_symbol = ".".join(rel_path.parts)
-            if module_symbol.endswith(".lean"):
-                module_symbol = module_symbol[:-5]
             module = file.module
-            module.name = module_symbol
-            self.symbol_tree.add_symbol(rel_path, module_symbol, None)
+            self.symbol_tree.add_symbol(rel_path, module.name, None)
             for pos, symbol in file.module.symbols():
                 self.symbol_tree.add_symbol(rel_path, symbol, pos)
 
