@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="./styles/style.css">
+    <title>Index</title>
+</head>
+<body>
+
+<ol id="index-ol">
+    {% for item in top_modules %}
+        <li><a href="{{ item.href }}">{{ item.name }}</a></li>
+    {% endfor %}
+</ol>
+
+</body>
+</html>
