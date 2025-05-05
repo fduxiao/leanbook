@@ -19,6 +19,25 @@ class TOC:
     def extend(self, another):
         self.list.extend(another.list)
 
+    def iter_html(self, max_level=3):
+        stack = [0]
+        i = 0
+        n = len(self.list)
+        while i < n:
+            x = self.list[i]
+            if x[0] > max_level:
+                i += 1
+                continue
+            if x[0] == stack[-1]:
+                yield f'<li><a href="#{x[2]}">{x[1]}</a></li>'
+                i += 1
+            elif x[0] > stack[-1]:
+                yield f'<ul class="toc_{x[0]}">'
+                stack.append(x[0])
+            else:
+                yield "</ul>"
+                stack.pop()
+
 
 class MyRenderer(HtmlRenderer):
     def __init__(self):

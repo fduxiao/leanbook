@@ -42,6 +42,18 @@ a:hover {
     display: inline;
 }
 
+.toc_1, .toc_1 ul {
+  list-style-type: none;
+}
+
+.toc_1 {
+  padding: 0;
+}
+
+.toc_1 ul {
+  padding-inline-start: 2ch;
+}
+
 /* for code highlight */
 .source.highlight {
     background-color: #fff;

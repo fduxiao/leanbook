@@ -7,13 +7,9 @@
 
 {% block body %}
     <div class="sidebar">
-        <ul>
-            {% for x in toc %}
-                {% if x[0] <= 2 %}
-                    <li><a href="#{{ x[2] }}">{{ x[1] }}</a></li>
-                {% endif %}
-            {% endfor %}
-        </ul>
+        {% for x in toc %}
+            {{ x }}
+        {% endfor %}
     </div>
     <div class="main"> {{ body }} </div>
 {% endblock %}

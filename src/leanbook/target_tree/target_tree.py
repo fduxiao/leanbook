@@ -22,15 +22,13 @@ class TemplateRenderer:
     def render_index(self, top_modules: dict[Path, str]) -> str:
         data = []
         for rel_path, name in top_modules.items():
-            data.append({
-                "href": f"./lean_modules/{name}.html",
-                "name": rel_path.name
-            })
+            data.append({"href": f"./lean_modules/{name}.html", "name": rel_path.name})
         return self.render("index.html.jinja2", top_modules=data)
 
     def render_module(self, title, toc, body):
-        toc = toc.list
-        return self.render("module.html.jinja2", title=title, toc=toc, body=body)
+        return self.render(
+            "module.html.jinja2", title=title, toc=toc.iter_html(max_level=3), body=body
+        )
 
 
 class TargetTree:
