@@ -1,0 +1,60 @@
+body {
+    padding: 0;
+    margin: 0;
+    border: 0;
+}
+
+.sidebar {
+    top: 0;
+    left: 0;
+    width: 15%;
+    height: 100%;
+    position: fixed;
+    z-index: 1;
+    background: #eee;
+    overflow-x: scroll;
+    overflow-y: scroll;
+    padding: 0 8px;
+}
+
+.main {
+    margin-left: calc(15% + 20px);
+    padding: 10px 10px;
+}
+
+a {
+    text-decoration: none;
+    color: #0050ac;
+    width: 100%;
+}
+
+a:hover {
+    color: #00accf;
+    text-decoration:none;
+    cursor:pointer;
+}
+
+:is(h1,h2,h3,h4,h5,h6) a.anchor {
+    display: none;
+}
+
+:is(h1,h2,h3,h4,h5,h6):hover a.anchor {
+    display: inline;
+}
+
+/* for code highlight */
+.source.highlight {
+    background-color: #fff;
+    margin: 5px 0;
+    padding: 0 0;
+}
+
+.highlight {
+    background-color: #efefef;
+    margin: 5px 0;
+    padding: 1px 10px;
+}
+
+.highlight .kn { color: #AA22FF; font-weight: bold }
+.highlight .n { color: #222 }
+.highlight .s { color: #BB4444 }

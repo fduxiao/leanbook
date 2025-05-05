@@ -27,16 +27,34 @@ class MyRenderer(HtmlRenderer):
 
     def render_heading(self, token: block_token.Heading) -> str:
         content = token.children[0].content
-        result = super().render_heading(token)
         anchor = content.replace(" ", "_")
-        result = f'<a href="#{anchor}">{result}</a>'
+        level = token.level
+        link = f'<a class="anchor" href="#{anchor}">#</a>'
+        heading = f'<h{level} id="{anchor}">{content} {link}</h{level}>'
         self.toc.add(token.level, content, anchor)
-        return result
+        return heading
+
+    def render_block_code(self, token: block_token.BlockCode) -> str:
+        from pygments import highlight
+        from pygments.lexers import get_lexer_by_name
+        from pygments.formatters import HtmlFormatter
+
+        content = token.content
+        language = token.language
+
+        cssclass = "highlight"
+        if language == "lean-source":
+            # lean code from the file directly
+            language = "lean"
+            cssclass = "highlight source"
+        lexer = get_lexer_by_name(language)
+        return highlight(content, lexer, HtmlFormatter(cssclass=cssclass))
 
 
 @dataclass()
 class DocElement:
     toc = None
+    content: str
 
     def render_md(self) -> str:
         pass
@@ -51,17 +69,13 @@ class DocElement:
 
 @dataclass()
 class LeanCode(DocElement):
-    content: str
-
     def render_md(self) -> str:
-        code = f"```lean\n{self.content}\n```"
+        code = f"```lean-source\n{self.content}\n```"
         return code
 
 
 @dataclass()
 class ModuleMarkdown(DocElement):
-    content: str
-
     def render_md(self) -> str:
         return self.content
 
@@ -85,10 +99,22 @@ class Document:
         self.top_module_toc = TOC()
 
     def add_elements(self, stream):
-        for one in self.iter_elements(stream):
+        for one in self.merge_elements(self.iter_elements(stream)):
             self.html += one.render_html()
             if one.toc is not None:
                 self.toc.extend(one.toc)
+
+    @staticmethod
+    def merge_elements(iterable):
+        prev_one = next(iterable)
+        one: DocElement
+        for one in iterable:
+            if isinstance(one, type(prev_one)):
+                prev_one.content += "\n" + one.content
+            else:
+                yield prev_one
+                prev_one = one
+        yield prev_one
 
     def iter_elements(self, stream):
         element: module.Element

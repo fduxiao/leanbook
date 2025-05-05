@@ -7,11 +7,12 @@
 </head>
 <body>
 
-<ol id="index-ol">
+<ul id="index-ol">
+    <li><a href="./api">API Documents</a></li>
     {% for item in top_modules %}
         <li><a href="{{ item.href }}">{{ item.name }}</a></li>
     {% endfor %}
-</ol>
+</ul>
 
 </body>
 </html>

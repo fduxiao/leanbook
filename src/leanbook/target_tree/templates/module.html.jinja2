@@ -2,13 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="./styles/style.css">
+    <link rel="stylesheet" href="../styles/style.css">
     <title>{{ title }}</title>
 </head>
 <body>
 
-<div> {{ toc }} </div>
-<div> {{ body }} </div>
+<div class="sidebar">
+    <ul>
+        {% for x in toc %}
+            {% if x[0] <= 2 %}
+                <li><a href="#{{ x[2] }}">{{ x[1] }}</a></li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+</div>
+<div class="main"> {{ body }} </div>
 
 </body>
 </html>
