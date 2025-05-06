@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass, field
 
 from . import token, lexer
@@ -68,6 +69,7 @@ class Group(Element):
     elements: list[Element] = field(default_factory=list)
     add_name = True
     type = ""
+    toc_hint = None
 
     def append(self, element: Element):
         self.elements.append(element)
@@ -89,6 +91,13 @@ class Group(Element):
         for one in self.elements:
             yield from one.element_stream()
         yield PopScope(self.end_pos, self.type, self.name)
+
+    def add_toc_hint(self, comment_string):
+        line_pattern = re.compile(r'^[\s ]*?[-*] +`(.*?)`: (.*?)$', re.MULTILINE)
+        result = []
+        for x in line_pattern.finditer(comment_string):
+            result.append(x.groups())
+        self.toc_hint = result
 
 
 @dataclass()
@@ -170,6 +179,15 @@ class GroupParser(MonadicParser):
                 decl = yield decl_parser
                 decl.doc_string = tk.content
                 section.append(decl)
+                continue
+            if isinstance(tk, token.TOCHint):
+                section.append(Comment(pos=tk.pos, content=tk.content))
+                # Read the next token, which should be a ModuleComment containing the TOC.
+                toc = yield lexer.module_comment
+                # Add it to section.
+                section.add_toc_hint(toc.content)
+                # Then, append the module comment as usual
+                section.append(ModuleComment(pos=toc.pos, content=toc.content))
                 continue
             if isinstance(tk, token.Comment):
                 section.append(Comment(pos=tk.pos, content=tk.content))

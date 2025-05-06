@@ -29,6 +29,11 @@ class DocString(Token):
 
 
 @dataclass()
+class TOCHint(Token):
+    pass
+
+
+@dataclass()
 class Identifier(Token):
     pass
 

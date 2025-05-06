@@ -1,5 +1,6 @@
 """Source tree"""
 
+from collections import namedtuple
 from pathlib import Path
 import tomllib
 
@@ -23,10 +24,14 @@ def parse_module_name(rel_path: Path):
     return module_name
 
 
+TOCHint = namedtuple("TOCHint", ["prev", "next", "up"])
+
+
 class SourceTree:
     def __init__(self, path: str | Path):
         self.path = Path(path)
         self.top_modules: dict[Path, str] = {}
+        self.toc_hits = {}
         self.file_map: dict[Path, SourceFile] = {}
         self.symbol_tree = SymbolTree()
 

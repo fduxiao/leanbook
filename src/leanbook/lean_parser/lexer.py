@@ -157,6 +157,8 @@ class Lexer(MonadicParser):
                 return token.DocString(pos, x)
             if x.startswith("/-!"):
                 return token.ModuleComment(pos, x)
+            if x == "/-TOC-/":
+                return token.TOCHint(pos, x)
             return token.Comment(pos, x)
         if ctx.look(2) == "--":
             x = yield line_comment
