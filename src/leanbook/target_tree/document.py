@@ -13,6 +13,9 @@ class TOC:
     def __init__(self):
         self.list = []
 
+    def clear(self):
+        self.list.clear()
+
     def add(self, level, title, anchor):
         self.list.append((level, title, anchor))
 
@@ -40,9 +43,13 @@ class TOC:
 
 
 class MyRenderer(HtmlRenderer):
-    def __init__(self):
-        self.toc = TOC()
+    def __init__(self, ctx: DocumentContext, toc: TOC):
+        self.toc = toc
+        self.ctx = ctx
         super().__init__()
+
+    def clear_toc(self):
+        self.toc.clear()
 
     def render_heading(self, token: block_token.Heading) -> str:
         content = token.children[0].content
@@ -72,17 +79,14 @@ class MyRenderer(HtmlRenderer):
 
 @dataclass()
 class DocElement:
-    toc = None
     content: str
 
     def render_md(self) -> str:
         pass
 
-    def render_html(self) -> str:
+    def render_html(self, renderer) -> str:
         md = self.render_md()
-        renderer = MyRenderer()
         html = renderer.render(mistletoe.Document(md))
-        self.toc = renderer.toc
         return html
 
 
@@ -104,7 +108,7 @@ class Header(DocElement):
     name: str
     level: int = 1
 
-    def render_html(self) -> str:
+    def render_html(self, renderer) -> str:
         anchor = self.name.replace(" ", "").strip()
         level = self.level
         return f'<a href="#{anchor}"><h{level}>{self.name}</h{level}></a>'
@@ -115,13 +119,12 @@ class Document:
         self.ctx = ctx
         self.html = ""
         self.toc = TOC()
+        self.renderer = MyRenderer(self.ctx, self.toc)
         self.top_module_toc = TOC()
 
     def add_elements(self, stream):
         for one in self.merge_elements(self.iter_elements(stream)):
-            self.html += one.render_html()
-            if one.toc is not None:
-                self.toc.extend(one.toc)
+            self.html += one.render_html(self.renderer)
 
     @staticmethod
     def merge_elements(iterable):
