@@ -22,6 +22,15 @@ body {
     padding: 10px 10px;
 }
 
+.flex-row {
+    width: 100%;
+    display: flex;
+}
+
+.flex-row div {
+    flex-grow: 1;
+}
+
 a {
     text-decoration: none;
     color: #0050ac;
@@ -32,6 +41,12 @@ a:hover {
     color: #00accf;
     text-decoration:none;
     cursor:pointer;
+}
+
+a.disabled {
+    color: black;
+    pointer-events: none;
+    cursor: default;
 }
 
 :is(h1,h2,h3,h4,h5,h6) a.anchor {

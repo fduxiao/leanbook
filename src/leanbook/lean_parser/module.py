@@ -93,7 +93,7 @@ class Group(Element):
         yield PopScope(self.end_pos, self.type, self.name)
 
     def add_toc_hint(self, comment_string):
-        line_pattern = re.compile(r'^[\s ]*?[-*] +`(.*?)`: (.*?)$', re.MULTILINE)
+        line_pattern = re.compile(r"^[\s ]*?[-*] +`(.*?)`: (.*?)$", re.MULTILINE)
         result = []
         for x in line_pattern.finditer(comment_string):
             result.append(x.groups())

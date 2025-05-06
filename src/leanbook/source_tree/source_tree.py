@@ -1,6 +1,6 @@
 """Source tree"""
 
-from collections import namedtuple
+from dataclasses import dataclass
 from pathlib import Path
 import tomllib
 
@@ -24,14 +24,18 @@ def parse_module_name(rel_path: Path):
     return module_name
 
 
-TOCHint = namedtuple("TOCHint", ["prev", "next", "up"])
+@dataclass()
+class TOCHint:
+    up: str | None = None
+    prev: str | None = None
+    next: str | None = None
 
 
 class SourceTree:
     def __init__(self, path: str | Path):
         self.path = Path(path)
         self.top_modules: dict[Path, str] = {}
-        self.toc_hits = {}
+        self.toc_hits: dict[str, TOCHint] = {}
         self.file_map: dict[Path, SourceFile] = {}
         self.symbol_tree = SymbolTree()
 
@@ -81,7 +85,39 @@ class SourceTree:
             for pos, symbol in file.module.symbols():
                 self.symbol_tree.add_symbol(rel_path, symbol, pos)
 
+    def build_toc_hint(self):
+        self.toc_hits.clear()
+        children_lists = {}
+        # make empty hints
+        for file in self.file_map.values():
+            self.toc_hits.setdefault(file.module_name, TOCHint())
+        # we first find parents and children
+        for file in self.file_map.values():
+            toc = file.module.toc_hint
+            if toc is None:
+                continue
+            children_lists[file.module_name] = [x[0] for x in toc]
+            for child, _ in toc:
+                self.toc_hits[child].up = file.module_name
+        # the prev and next
+        for file in self.file_map.values():
+            hint = self.toc_hits[file.module_name]
+            parent = hint.up
+            siblings = children_lists.get(parent, None)
+            if siblings is None:
+                continue
+            # must be true
+            index = siblings.index(file.module_name)
+            if index > 0:
+                hint.prev = siblings[index - 1]
+            if index < len(siblings) - 1:
+                hint.next = siblings[index + 1]
+
+    def get_toc_hint(self, module_name):
+        return self.toc_hits[module_name]
+
     def build_tree(self):
         self.scan_files()
         self.read_files()
         self.build_symbols()
+        self.build_toc_hint()

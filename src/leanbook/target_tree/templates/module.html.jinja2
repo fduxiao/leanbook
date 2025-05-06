@@ -7,9 +7,16 @@
 
 {% block body %}
     <div class="sidebar">
-        {% for x in toc %}
-            {{ x }}
-        {% endfor %}
+        <div class="flex-row">
+            <div style="text-align: left"><a {{ prev }}>prev</a></div>
+            <div style="text-align: center"><a {{ up }}>up</a></div>
+            <div style="text-align: right"><a {{ next }}>next</a></div>
+        </div>
+        <div style="width: 100%">
+            {% for x in toc %}
+                {{ x }}
+            {% endfor %}
+        </div>
     </div>
     <div class="main"> {{ body }} </div>
 {% endblock %}

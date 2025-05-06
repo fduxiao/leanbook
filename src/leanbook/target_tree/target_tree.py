@@ -25,9 +25,26 @@ class TemplateRenderer:
             data.append({"href": f"./lean_modules/{name}.html", "name": rel_path.name})
         return self.render("index.html.jinja2", top_modules=data)
 
-    def render_module(self, title, toc, body):
+    def render_module(self, title, toc, toc_hint, body):
+        def opt_href(x, default=None):
+            if x is None:
+                if default is None:
+                    return ' class="disabled" '
+                return f'href="{default}"'
+            return f'href="{x}.html"'
+
+        up_href = opt_href(toc_hint.up, "../index.html")
+        prev_href = opt_href(toc_hint.prev)
+        next_href = opt_href(toc_hint.next)
+
         return self.render(
-            "module.html.jinja2", title=title, toc=toc.iter_html(max_level=3), body=body
+            "module.html.jinja2",
+            title=title,
+            toc=toc.iter_html(max_level=3),
+            body=body,
+            up=up_href,
+            prev=prev_href,
+            next=next_href,
         )
 
 
@@ -41,15 +58,16 @@ class TargetTree:
     def get_path(self, rel_path):
         return self.output_dir / rel_path
 
-    def render_file(self, rel_path: Path):
+    def render_module(self, rel_path: Path):
         print("rendering", rel_path)
         source_file: SourceFile = self.source_tree.file_map[rel_path]
+        toc_hint = self.source_tree.get_toc_hint(source_file.module_name)
         document = Document(self.ctx)
         document.add_elements(source_file.module.element_stream())
         module_name = source_file.module_name
         body = document.html
         toc = document.toc
-        html = self.renderer.render_module(module_name, toc, body)
+        html = self.renderer.render_module(module_name, toc, toc_hint, body)
         with open(
             self.output_dir / "lean_modules" / f"{module_name}.html", "w"
         ) as file:
@@ -58,7 +76,7 @@ class TargetTree:
     def render_all(self):
         self.render_index()
         for rel_path in self.source_tree.file_map:
-            self.render_file(rel_path)
+            self.render_module(rel_path)
 
     def render_and_write(self, path, **kwargs):
         with open(self.output_dir / path, "w") as file:
