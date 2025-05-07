@@ -7,17 +7,19 @@ class SourcePos:
     index: int
     line: int
     col: int
+    file_path: str | None = None
 
     def copy(self):
-        return SourcePos(self.index, self.line, self.col)
+        return SourcePos(self.index, self.line, self.col, self.file_path)
 
 
 class SourceContext:
-    def __init__(self, text: str):
+    def __init__(self, text: str, file_path: str = None):
         self.text = text
         self.index = 0
         self.line = 1
         self.col = 1
+        self.file_path = file_path
 
     def look(self, n=1):
         start = self.index
@@ -69,7 +71,7 @@ class SourceContext:
 
     @property
     def pos(self):
-        return SourcePos(self.index, self.line, self.col)
+        return SourcePos(self.index, self.line, self.col, self.file_path)
 
     @pos.setter
     def pos(self, pos: SourcePos):
@@ -79,7 +81,7 @@ class SourceContext:
 
 
 @dataclass(init=False)
-class Fail:
+class Fail(Exception):
     ctx: SourceContext
     args: tuple
 
@@ -88,16 +90,12 @@ class Fail:
         self.args = args
 
 
-class TryFail:
-    pass
-
-
 class BaseParser:
     def parse(self, ctx: SourceContext):
-        return Fail(ctx)
+        raise Fail(ctx)
 
-    def parse_str(self, text: str):
-        return self.parse(SourceContext(text))
+    def parse_str(self, text: str, file_path: str = None):
+        return self.parse(SourceContext(text, file_path=file_path))
 
     def __or__(self, other: "BaseParser") -> "BaseParser":
         return OrElse(self, other)
@@ -115,11 +113,11 @@ class TryParser(BaseParser):
 
     def parse(self, ctx: SourceContext):
         pos = ctx.pos
-        r = self.parser.parse(ctx)
-        if isinstance(r, Fail):
+        try:
+            return self.parser.parse(ctx)
+        except Fail as err:
             ctx.pos = pos
-            return TryFail
-        return r
+            return err
 
 
 class OrElse(BaseParser):
@@ -129,11 +127,11 @@ class OrElse(BaseParser):
 
     def parse(self, ctx: SourceContext):
         pos = ctx.pos
-        r = self.p1.parse(ctx)
-        if isinstance(r, Fail):
+        try:
+            return self.p1.parse(ctx)
+        except Fail:
             ctx.pos = pos
             return self.p2.parse(ctx)
-        return r
 
 
 class TryLookParser(BaseParser):
@@ -142,9 +140,10 @@ class TryLookParser(BaseParser):
 
     def parse(self, ctx: SourceContext):
         pos = ctx.pos
-        r = self.parser.parse(ctx)
-        if isinstance(r, Fail):
-            r = TryFail
+        try:
+            r = self.parser.parse(ctx)
+        except Fail as err:
+            r = err
         ctx.pos = pos
         return r
 
@@ -167,10 +166,7 @@ class MonadicParser(BaseParser):
         while True:
             try:
                 parser = generator.send(value)
-                result = parser.parse(ctx)
-                if isinstance(result, Fail):
-                    return result
-                value = result
+                value = parser.parse(ctx)
             except StopIteration as err:
                 return err.value
 
@@ -190,7 +186,7 @@ class EOF(BaseParser):
         x = ctx.look(1)
         if x is None:
             return None
-        return Fail(f"Expect EOF, but got `{x}`")
+        raise Fail(f"Expect EOF, but got `{x}`")
 
 
 eof = EOF()
@@ -203,10 +199,10 @@ class String(BaseParser):
     def parse(self, ctx: SourceContext):
         read = ctx.take(len(self.s))
         if read is None:
-            return Fail(ctx, "Unexpected EOF")
+            raise Fail(ctx, "Unexpected EOF")
         if self.s == read:
             return self.s
-        return Fail(ctx, f"Expect `{self.s}`, but got `{read}`")
+        raise Fail(ctx, f"Expect `{self.s}`, but got `{read}`")
 
 
 class Many(BaseParser):
@@ -217,11 +213,11 @@ class Many(BaseParser):
         result = []
         while True:
             pos = ctx.pos
-            one = self.parser.parse(ctx)
-            if isinstance(one, Fail):
+            try:
+                result.append(self.parser.parse(ctx))
+            except Fail:
                 ctx.pos = pos
                 break
-            result.append(one)
         return result
 
 
@@ -232,7 +228,7 @@ class Any(BaseParser):
     def parse(self, ctx: SourceContext):
         ch = ctx.take(self.n)
         if ch is None:
-            return Fail(ctx, f"Unable to take {self.n} chars")
+            raise Fail(ctx, f"Unable to take {self.n} chars")
         return ch
 
 
@@ -260,7 +256,7 @@ class AnyUntil(BaseParser):
         while True:
             # try parse until
             pos = ctx.pos
-            if not isinstance(self.until.parse(ctx), Fail):
+            if not isinstance(self.until.try_fail().parse(ctx), Fail):
                 # restore the state
                 ctx.pos = pos
                 break

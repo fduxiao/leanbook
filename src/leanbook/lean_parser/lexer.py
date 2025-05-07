@@ -1,6 +1,6 @@
 import re
 
-from .parser import MonadicParser, Fail, TryFail, get_ctx
+from .parser import MonadicParser, Fail, get_ctx
 from . import parser, token
 
 
@@ -58,12 +58,12 @@ class Identifier(MonadicParser):
         pos = ctx.pos
         match = self.pattern.match(ctx.text, pos.index)
         if match is None:
-            return Fail(ctx, "Expect identifier")
+            raise Fail(ctx, "Expect identifier")
         (start, end) = match.span(0)
         if start != pos.index:
-            return Fail(ctx, f"Expect identifier, but got `{ctx.at()}`")
+            raise Fail(ctx, f"Expect identifier, but got `{ctx.at()}`")
         if start == end:
-            return Fail(ctx, "Empty identifier")
+            raise Fail(ctx, "Empty identifier")
         ctx.shift(end - pos.index)
         result: str = ctx.text[start:end]
         return result
@@ -105,7 +105,7 @@ class Command(MonadicParser):
                     continue
             ctx.shift(n)
             return w
-        return Fail(ctx, "Expect a command")
+        raise Fail(ctx, "Expect a command")
 
 
 command_parser = Command()
@@ -129,7 +129,7 @@ class CodeParser(MonadicParser):
                 break
             # stop at keywords
             cmd = yield command_parser.try_look()
-            if cmd is not TryFail:
+            if not isinstance(cmd, Fail):
                 break
             result += ctx.take(1)
         return result
@@ -167,16 +167,16 @@ class Lexer(MonadicParser):
         if ctx.look(2) == "@[":
             index = ctx.find("]")
             if index < 0:
-                return Fail(ctx, "Expect ']'")
+                raise Fail(ctx, "Expect ']'")
             x = ctx.take(index + 1)
             return token.DeclModifier(pos, x)
 
         cmd = yield command_parser.try_fail()
-        if cmd is not TryFail:
+        if not isinstance(cmd, Fail):
             return token.Command(pos, cmd)
 
         w = yield identifier_parser.try_fail()
-        if w is not TryFail:
+        if not isinstance(w, Fail):
             return token.Identifier(pos, w)
 
         # read code
@@ -196,7 +196,7 @@ class ExpectToken(MonadicParser):
         ctx = yield get_ctx
         tk = yield any_token
         if not isinstance(tk, self.token_class):
-            return Fail(ctx, f"Expect `{self.token_class}`, but got `{tk}`")
+            raise Fail(ctx, f"Expect `{self.token_class}`, but got `{tk}`")
         return tk
 
 

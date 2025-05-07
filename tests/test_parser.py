@@ -6,19 +6,19 @@ from leanbook.lean_parser.parser import *
 
 class TestParser(unittest.TestCase):
     def test_base_parser(self):
-        parser = BaseParser()
-        r = parser.parse_str("aabbccdd")
-        self.assertIsInstance(r, Fail)
+        helper = ParserHelper(self, BaseParser())
+        helper.assert_fail("aabbccdd")
 
     def test_or_else(self):
         p1 = String("aa")
         p2 = String("ab")
         p3 = String("bb")
         parser = p1 | p2 | p3
-        self.assertIsInstance(parser.parse_str("a"), Fail)
-        self.assertEqual("aa", parser.parse_str("aa"))
-        self.assertEqual("ab", parser.parse_str("ab"))
-        self.assertEqual("bb", parser.parse_str("bb"))
+        helper = ParserHelper(self, parser)
+        helper.assert_fail("a")
+        helper.assert_complete_parse("aa")
+        helper.assert_complete_parse("ab")
+        helper.assert_complete_parse("bb")
 
         cs = SourceContext("aabbab")
         self.assertEqual("aa", parser.parse(cs))

@@ -88,10 +88,11 @@ class TestLexer(unittest.TestCase):
         self.assertEqual(len(ctx.text), 146)
 
     def test_command(self):
-        self.assertEqual(lexer.command_parser.parse_str("def a := 2"), "def")
-        self.assertIsInstance(lexer.command_parser.parse_str("defa x y z"), Fail)
-        self.assertIsInstance(lexer.command_parser.parse_str("def.a x y z"), Fail)
-        self.assertIsInstance(lexer.command_parser.parse_str("def_a x y z"), Fail)
+        helper = ParserHelper(self, lexer.command_parser)
+        helper.assert_parse("def a := 2", "def")
+        helper.assert_fail("defa x y z")
+        helper.assert_fail("def.a x y z")
+        helper.assert_fail("def_a x y z")
 
     def test_identifier(self):
         self.assertEqual(lexer.identifier_parser.parse_str("def a := 2"), "def")

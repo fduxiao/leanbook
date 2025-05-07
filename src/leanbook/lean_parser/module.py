@@ -127,9 +127,9 @@ class DeclParser(MonadicParser):
             tk = yield lexer.any_token
         # it must be a command
         if not isinstance(tk, token.Command):
-            return Fail(ctx, f"Expect command, but got {tk}")
+            raise Fail(ctx, f"Expect command, but got {tk}")
         if not tk.is_declaration():
-            return Fail(ctx, f"Expect a declaration, but got {tk}")
+            raise Fail(ctx, f"Expect a declaration, but got {tk}")
         decl_type = tk.content
         decl_pos = tk.pos
         # read the name
@@ -137,7 +137,7 @@ class DeclParser(MonadicParser):
         name = None
         if not isinstance(tk, token.Identifier):
             if decl_type != "instance":
-                return Fail("Expect an identifier")
+                raise Fail("Expect an identifier")
             # set back the pos
             ctx.pos = tk.pos
         else:
@@ -207,7 +207,7 @@ class GroupParser(MonadicParser):
                     tk = yield lexer.identifier
                     section.append(Import(tk.pos, tk.content))
                     continue
-            return Fail(ctx, f"Unknown Token {tk}")
+            raise Fail(ctx, f"Unknown Token {tk}")
         section.end_pos = ctx.pos
         return section
 

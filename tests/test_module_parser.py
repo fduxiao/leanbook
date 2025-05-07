@@ -1,11 +1,13 @@
 import unittest
+from .helper import ParserHelper
 from leanbook.lean_parser.module import decl_parser, Declaration, Fail, SourcePos
 
 
 class TestModuleParser(unittest.TestCase):
     def test_declarations(self):
-        self.assertEqual(
-            decl_parser.parse_str("""def x := 2"""),
+        helper = ParserHelper(self, decl_parser)
+        helper.assert_parse(
+            """def x := 2""",
             Declaration(
                 pos=SourcePos(0, 1, 1),
                 type="def",
@@ -16,8 +18,8 @@ class TestModuleParser(unittest.TestCase):
             ),
         )
 
-        self.assertEqual(
-            decl_parser.parse_str("""instance: Coe Nat String where coe := sorry"""),
+        helper.assert_parse(
+            """instance: Coe Nat String where coe := sorry""",
             Declaration(
                 pos=SourcePos(0, 1, 1),
                 type="instance",
@@ -27,8 +29,8 @@ class TestModuleParser(unittest.TestCase):
                 doc_string="",
             ),
         )
-        self.assertEqual(
-            decl_parser.parse_str("""@[simp]def id x := x"""),
+        helper.assert_parse(
+            """@[simp]def id x := x""",
             Declaration(
                 pos=SourcePos(7, 1, 8),
                 type="def",
@@ -39,7 +41,7 @@ class TestModuleParser(unittest.TestCase):
             ),
         )
 
-        self.assertIsInstance(decl_parser.parse_str("""def := x"""), Fail)
+        helper.assert_fail("""def := x""")
 
 
 if __name__ == "__main__":

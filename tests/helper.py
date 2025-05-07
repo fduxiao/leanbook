@@ -7,15 +7,18 @@ class ParserHelper:
         self.test_case = test_case
         self.parser = parser
 
-    def assert_parse(self, x):
-        ctx = SourceContext(x)
+    def assert_parse(self, text, result=None):
+        ctx = SourceContext(text)
         parsed = self.parser.parse(ctx)
-        self.test_case.assertEqual(parsed, x[: len(parsed)])
+        if result is None:
+            result = text[: len(parsed)]
+        self.test_case.assertEqual(parsed, result)
         return ctx
 
-    def assert_complete_parse(self, x):
-        ctx = self.assert_parse(x)
+    def assert_complete_parse(self, text, result=None):
+        ctx = self.assert_parse(text, result)
         self.test_case.assertTrue(ctx.end())
 
-    def assert_fail(self, x):
-        self.test_case.assertIsInstance(self.parser.parse_str(x), Fail)
+    def assert_fail(self, text):
+        with self.test_case.assertRaises(Fail):
+            self.parser.parse_str(text)
