@@ -20,4 +20,4 @@ class SourceFile:
         self.module = module_parser.parse_str(content)
         self.module.name = self.module_name
         if isinstance(self.module, Fail):
-            raise SyntaxError(self.path, Fail)
+            raise SyntaxError((str(self.path), self.module))
