@@ -14,3 +14,10 @@ class DocumentContext:
 
     def pop_scope(self):
         self.ctx_stack.pop()
+
+    def resolve(self, symbol):
+        symbol_tree = self.source_tree.symbol_tree
+        result = symbol_tree.find(symbol)
+        rel_path = result.rel_path
+        module = self.source_tree.file_map[rel_path]
+        return f"{module.module_name}.html", result.source_pos

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 import mistletoe
-from mistletoe import block_token
+from mistletoe import block_token, span_token
 from mistletoe.html_renderer import HtmlRenderer
 
 
@@ -75,6 +75,17 @@ class MyRenderer(HtmlRenderer):
             cssclass = "highlight source"
         lexer = get_lexer_by_name(language)
         return highlight(content, lexer, HtmlFormatter(cssclass=cssclass))
+
+    def render_inline_code(self, token: span_token.InlineCode) -> str:
+        symbol = token.children[0].content
+        resolved = self.ctx.resolve(symbol)
+        if resolved is None:
+            return super().render_inline_code(token)
+        url, pos = resolved
+        anchor = ""
+        if pos is not None:
+            anchor = f"#{symbol}"
+        return f'<a href="{url}{anchor}">{symbol}</a>'
 
 
 @dataclass()

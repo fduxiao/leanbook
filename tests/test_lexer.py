@@ -3,7 +3,7 @@ import unittest
 from .helper import ParserHelper
 
 
-from leanbook.lean_parser.parser import SourceContext, Fail, Pos
+from leanbook.lean_parser.parser import SourceContext, Fail, SourcePos
 from leanbook.lean_parser import token, lexer
 
 
@@ -57,29 +57,31 @@ class TestLexer(unittest.TestCase):
             else:
                 self.assertTrue(text[pos.index :].startswith(content))
 
-        assert_parse(token.ModuleComment, pos=Pos(2, 1, 3), content="/-!aaa-/")
-        assert_parse(token.Command, pos=Pos(11, 1, 12), content="import")
-        assert_parse(token.Identifier, pos=Pos(18, 1, 19), content="something")
-        assert_parse(token.Code, pos=Pos(28, 2, 1), content="\\abc")
-        assert_parse(token.Command, pos=Pos(33, 3, 1), content="import")
-        assert_parse(token.Identifier, pos=Pos(40, 3, 8), content="a.else")
-        assert_parse(token.DocString, pos=Pos(48, 4, 2), content="/--doc string-/")
-        assert_parse(token.Command, pos=Pos(63, 4, 17), content="def")
-        assert_parse(token.Identifier, pos=Pos(67, 4, 21), content="a")
-        assert_parse(token.Code, pos=Pos(69, 4, 23), content=':= 2 \n"/-" yz')
-        assert_parse(token.Comment, pos=Pos(83, 5, 9), content="/- comme/--/nt-/")
-        assert_parse(token.Identifier, pos=Pos(100, 5, 26), content="xz")
-        assert_parse(token.Command, pos=Pos(104, 5, 30), content="#check")
-        assert_parse(token.Identifier, pos=Pos(111, 5, 37), content="x")
-        assert_parse(token.Code, pos=Pos(113, 5, 39), content="= 2")
-        assert_parse(token.Command, pos=Pos(117, 6, 1), content="section")
-        assert_parse(token.Identifier, pos=Pos(125, 6, 9), content="abc")
-        assert_parse(token.Command, pos=Pos(129, 6, 13), content="end")
-        assert_parse(token.Identifier, pos=Pos(133, 6, 17), content="abc")
-        assert_parse(token.DeclModifier, pos=Pos(138, 6, 22), content="@[simp]")
+        assert_parse(token.ModuleComment, pos=SourcePos(2, 1, 3), content="/-!aaa-/")
+        assert_parse(token.Command, pos=SourcePos(11, 1, 12), content="import")
+        assert_parse(token.Identifier, pos=SourcePos(18, 1, 19), content="something")
+        assert_parse(token.Code, pos=SourcePos(28, 2, 1), content="\\abc")
+        assert_parse(token.Command, pos=SourcePos(33, 3, 1), content="import")
+        assert_parse(token.Identifier, pos=SourcePos(40, 3, 8), content="a.else")
+        assert_parse(
+            token.DocString, pos=SourcePos(48, 4, 2), content="/--doc string-/"
+        )
+        assert_parse(token.Command, pos=SourcePos(63, 4, 17), content="def")
+        assert_parse(token.Identifier, pos=SourcePos(67, 4, 21), content="a")
+        assert_parse(token.Code, pos=SourcePos(69, 4, 23), content=':= 2 \n"/-" yz')
+        assert_parse(token.Comment, pos=SourcePos(83, 5, 9), content="/- comme/--/nt-/")
+        assert_parse(token.Identifier, pos=SourcePos(100, 5, 26), content="xz")
+        assert_parse(token.Command, pos=SourcePos(104, 5, 30), content="#check")
+        assert_parse(token.Identifier, pos=SourcePos(111, 5, 37), content="x")
+        assert_parse(token.Code, pos=SourcePos(113, 5, 39), content="= 2")
+        assert_parse(token.Command, pos=SourcePos(117, 6, 1), content="section")
+        assert_parse(token.Identifier, pos=SourcePos(125, 6, 9), content="abc")
+        assert_parse(token.Command, pos=SourcePos(129, 6, 13), content="end")
+        assert_parse(token.Identifier, pos=SourcePos(133, 6, 17), content="abc")
+        assert_parse(token.DeclModifier, pos=SourcePos(138, 6, 22), content="@[simp]")
 
         self.assertFalse(ctx.end())
-        assert_parse(token.EOF, pos=Pos(146, 6, 30))
+        assert_parse(token.EOF, pos=SourcePos(146, 6, 30))
         self.assertTrue(ctx.end())
 
         self.assertEqual(ctx.pos.index, 146)

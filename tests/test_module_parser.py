@@ -1,5 +1,5 @@
 import unittest
-from leanbook.lean_parser.module import decl_parser, Declaration, Fail, Pos
+from leanbook.lean_parser.module import decl_parser, Declaration, Fail, SourcePos
 
 
 class TestModuleParser(unittest.TestCase):
@@ -7,7 +7,7 @@ class TestModuleParser(unittest.TestCase):
         self.assertEqual(
             decl_parser.parse_str("""def x := 2"""),
             Declaration(
-                pos=Pos(0, 1, 1),
+                pos=SourcePos(0, 1, 1),
                 type="def",
                 name="x",
                 body=":= 2",
@@ -19,7 +19,7 @@ class TestModuleParser(unittest.TestCase):
         self.assertEqual(
             decl_parser.parse_str("""instance: Coe Nat String where coe := sorry"""),
             Declaration(
-                pos=Pos(0, 1, 1),
+                pos=SourcePos(0, 1, 1),
                 type="instance",
                 name=None,
                 body=": Coe Nat String where coe := sorry",
@@ -30,7 +30,7 @@ class TestModuleParser(unittest.TestCase):
         self.assertEqual(
             decl_parser.parse_str("""@[simp]def id x := x"""),
             Declaration(
-                pos=Pos(7, 1, 8),
+                pos=SourcePos(7, 1, 8),
                 type="def",
                 name="id",
                 body="",

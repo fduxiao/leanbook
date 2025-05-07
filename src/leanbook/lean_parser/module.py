@@ -2,12 +2,12 @@ import re
 from dataclasses import dataclass, field
 
 from . import token, lexer
-from .parser import MonadicParser, Fail, get_ctx, Pos
+from .parser import MonadicParser, Fail, get_ctx, SourcePos
 
 
 @dataclass()
 class Element:
-    pos: Pos
+    pos: SourcePos
 
     def symbols(self):
         yield from ()
@@ -64,7 +64,7 @@ class PopScope(Element):
 
 @dataclass()
 class Group(Element):
-    end_pos: Pos = field(default_factory=lambda: Pos(0, 1, 1))
+    end_pos: SourcePos = field(default_factory=lambda: SourcePos(0, 1, 1))
     name: str | None = None
     elements: list[Element] = field(default_factory=list)
     add_name = True

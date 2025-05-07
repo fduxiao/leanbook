@@ -1,13 +1,13 @@
 from dataclasses import dataclass, field
 from typing import Any
 
-from ..lean_parser import Pos
+from ..lean_parser import SourcePos
 
 
 @dataclass()
 class SymbolPos:
     rel_path: Any
-    pos: Pos = None
+    source_pos: SourcePos = None
 
 
 class TreePath:
@@ -25,7 +25,7 @@ class TreePath:
         return head
 
     def __repr__(self):
-        return f"TreePath({repr('.'.join(self.path))})"
+        return f"TreePath({self.path[self.index :]})"
 
 
 @dataclass()
@@ -36,7 +36,7 @@ class SymbolTree:
     def clear(self):
         self.map.clear()
 
-    def insert_path(self, tree_path: TreePath, rel_path, pos: Pos | None):
+    def insert_path(self, tree_path: TreePath, rel_path, pos: SourcePos | None):
         target = self
         while True:
             head = tree_path.take()
@@ -46,7 +46,7 @@ class SymbolTree:
                 break
             target = target.map.setdefault(head, SymbolTree())
 
-    def add_symbol(self, rel_path, symbol: str, pos: Pos | None):
+    def add(self, rel_path, symbol: str, pos: SourcePos | None):
         tree_path = TreePath(symbol)
         self.insert_path(tree_path, rel_path, pos)
 
@@ -55,3 +55,16 @@ class SymbolTree:
         for key, value in self.map.items():
             result[key] = value.to_dict()
         return result
+
+    def find(self, tree_path: str | TreePath) -> SymbolPos | None:
+        if not isinstance(tree_path, TreePath):
+            tree_path = TreePath(tree_path)
+        target = self
+        while True:
+            head = tree_path.take()
+            if head is None:
+                # return target
+                return target.pos
+            target = target.map.get(head, None)
+            if target is None:
+                return None

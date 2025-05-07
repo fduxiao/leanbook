@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from .parser import Pos
+from .parser import SourcePos
 
 
 @dataclass()
 class Token:
-    pos: Pos
+    pos: SourcePos
     content: str = None
 
 

@@ -81,9 +81,9 @@ class SourceTree:
         self.symbol_tree.clear()
         for rel_path, file in self.file_map.items():
             module = file.module
-            self.symbol_tree.add_symbol(rel_path, module.name, None)
+            self.symbol_tree.add(rel_path, module.name, None)
             for pos, symbol in file.module.symbols():
-                self.symbol_tree.add_symbol(rel_path, symbol, pos)
+                self.symbol_tree.add(rel_path, symbol, pos)
 
     def build_toc_hint(self):
         self.toc_hits.clear()

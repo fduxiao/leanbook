@@ -3,13 +3,13 @@ from functools import update_wrapper
 
 
 @dataclass()
-class Pos:
+class SourcePos:
     index: int
     line: int
     col: int
 
     def copy(self):
-        return Pos(self.index, self.line, self.col)
+        return SourcePos(self.index, self.line, self.col)
 
 
 class SourceContext:
@@ -69,10 +69,10 @@ class SourceContext:
 
     @property
     def pos(self):
-        return Pos(self.index, self.line, self.col)
+        return SourcePos(self.index, self.line, self.col)
 
     @pos.setter
-    def pos(self, pos: Pos):
+    def pos(self, pos: SourcePos):
         self.index = pos.index
         self.line = pos.line
         self.col = pos.col
