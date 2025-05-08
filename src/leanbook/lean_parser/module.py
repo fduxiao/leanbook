@@ -199,7 +199,7 @@ class GroupParser(MonadicParser):
                 section.append(decl)
                 continue
             if isinstance(tk, token.TOCHint):
-                section.append(Comment(pos=tk.pos, content=tk.content))
+                # We have found a TOC token
                 # Read the next token, which should be a ModuleComment containing the TOC.
                 toc = yield lexer.module_comment
                 # Add it to section.
