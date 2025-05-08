@@ -18,6 +18,8 @@ class DocumentContext:
     def resolve(self, symbol):
         symbol_tree = self.source_tree.symbol_tree
         result = symbol_tree.find(symbol)
+        if result is None:
+            return None
         rel_path = result.rel_path
         module = self.source_tree.file_map[rel_path]
         return f"{module.module_name}.html", result.source_pos
