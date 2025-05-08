@@ -251,8 +251,8 @@ class ModuleParser(GroupParser):
         pos = ctx.pos
         tk: token.Comment = yield lexer.comment
         head_comment = None
-        if tk.content.startswith('/-'):
-            if tk.content[2] not in '!-':
+        if tk.content.startswith("/-"):
+            if tk.content[2] not in "!-":
                 # head comment
                 head_comment = tk.content
         if head_comment is None:

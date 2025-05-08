@@ -1,8 +1,10 @@
 from dataclasses import dataclass
+import re
 
 import mistletoe
 from mistletoe import block_token, span_token
 from mistletoe.html_renderer import HtmlRenderer
+from mistletoe.span_token import SpanToken
 
 
 from ..lean_parser import module
@@ -42,14 +44,30 @@ class TOC:
                 stack.pop()
 
 
+class BibRef(SpanToken):
+    parse_inner = True
+    parse_group = 1
+    pattern = re.compile(r"\[(.*?)]\[(.*?)]")
+
+    def __init__(self, match):
+        super().__init__(match)
+        self.inner = match.group(1)
+        self.reference = match.group(2)
+
+
 class MyRenderer(HtmlRenderer):
     def __init__(self, ctx: DocumentContext, toc: TOC):
         self.toc = toc
         self.ctx = ctx
-        super().__init__()
+        super().__init__(BibRef)
 
     def clear_toc(self):
         self.toc.clear()
+
+    def render_bib_ref(self, token: BibRef) -> str:
+        inner = self.render_inner(token)
+        href = f"#ref_{token.reference}"
+        return f'<a href="../api/references.html{href}">{inner}</a>'
 
     def render_heading(self, token: block_token.Heading) -> str:
         content = token.children[0].content
