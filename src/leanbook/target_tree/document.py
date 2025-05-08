@@ -1,14 +1,8 @@
 from dataclasses import dataclass
-import re
-
-import mistletoe
-from mistletoe import block_token, span_token
-from mistletoe.html_renderer import HtmlRenderer
-from mistletoe.span_token import SpanToken
-
 
 from ..lean_parser import module
 from .context import DocumentContext
+from .md_render import MDRender, parse_md
 
 
 class TOC:
@@ -44,72 +38,6 @@ class TOC:
                 stack.pop()
 
 
-class BibRef(SpanToken):
-    parse_inner = True
-    parse_group = 1
-    pattern = re.compile(r"\[(.*?)]\[(.*?)]")
-
-    def __init__(self, match):
-        super().__init__(match)
-        self.inner = match.group(1)
-        self.reference = match.group(2)
-
-
-class MyRenderer(HtmlRenderer):
-    def __init__(self, ctx: DocumentContext, toc: TOC):
-        self.toc = toc
-        self.ctx = ctx
-        super().__init__(BibRef)
-
-    def clear_toc(self):
-        self.toc.clear()
-
-    def render_bib_ref(self, token: BibRef) -> str:
-        inner = self.render_inner(token)
-        href = f"#ref_{token.reference}"
-        return f'<a href="../api/references.html{href}">{inner}</a>'
-
-    def render_heading(self, token: block_token.Heading) -> str:
-        content = token.children[0].content
-        anchor = content.replace(" ", "_")
-        level = token.level
-        link = f'<a class="anchor" href="#{anchor}">#</a>'
-        heading = f'<h{level} id="{anchor}">{content} {link}</h{level}>'
-        self.toc.add(token.level, content, anchor)
-        return heading
-
-    def render_block_code(self, token: block_token.BlockCode) -> str:
-        from pygments import highlight
-        from pygments.lexers import get_lexer_by_name, guess_lexer
-        from pygments.formatters import HtmlFormatter
-
-        content = token.content
-        language = token.language
-
-        cssclass = "highlight"
-        if language == "lean-source":
-            # lean code from the file directly
-            language = "lean"
-            cssclass = "highlight source"
-
-        if language == "":
-            lexer = guess_lexer(content)
-        else:
-            lexer = get_lexer_by_name(language)
-        return highlight(content, lexer, HtmlFormatter(cssclass=cssclass))
-
-    def render_inline_code(self, token: span_token.InlineCode) -> str:
-        symbol = token.children[0].content
-        resolved = self.ctx.resolve(symbol)
-        if resolved is None:
-            return super().render_inline_code(token)
-        url, pos = resolved
-        anchor = ""
-        if pos is not None:
-            anchor = f"#{symbol}"
-        return f'<a href="{url}{anchor}">{symbol}</a>'
-
-
 @dataclass()
 class DocElement:
     content: str
@@ -119,7 +47,7 @@ class DocElement:
 
     def render_html(self, renderer) -> str:
         md = self.render_md()
-        html = renderer.render(mistletoe.Document(md))
+        html = renderer.render(parse_md(md))
         return html
 
 
@@ -152,7 +80,7 @@ class Document:
         self.ctx = ctx
         self.html = ""
         self.toc = TOC()
-        self.renderer = MyRenderer(self.ctx, self.toc)
+        self.renderer = MDRender(self.ctx, self.toc)
         self.top_module_toc = TOC()
 
     def add_elements(self, stream):
