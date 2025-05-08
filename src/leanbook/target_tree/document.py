@@ -157,6 +157,7 @@ class Document:
         element: module.Element
         for element in stream:
             if isinstance(element, module.Comment):
+                yield LeanCode(f"{element.content}")
                 continue
             if isinstance(element, module.Import):
                 yield LeanCode(f"import {element.name}")

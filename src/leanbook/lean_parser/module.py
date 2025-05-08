@@ -114,6 +114,7 @@ class Namespace(Group):
 @dataclass()
 class Module(Group):
     type = "module"
+    head_comment = None
 
 
 class UntilNextCommand(MonadicParser):
@@ -239,4 +240,26 @@ class GroupParser(MonadicParser):
 
 section_parser = GroupParser(Section)
 namespace_parser = GroupParser(Namespace)
-module_parser = GroupParser(Module)
+
+
+class ModuleParser(GroupParser):
+    def __init__(self):
+        super().__init__(Module)
+
+    def do(self):
+        ctx = yield lexer.get_ctx
+        pos = ctx.pos
+        tk: token.Comment = yield lexer.comment
+        head_comment = None
+        if tk.content.startswith('/-'):
+            if tk.content[2] not in '!-':
+                # head comment
+                head_comment = tk.content
+        if head_comment is None:
+            ctx.pos = pos
+        m = yield from super().do()
+        m.head_comment = head_comment
+        return m
+
+
+module_parser = ModuleParser()
