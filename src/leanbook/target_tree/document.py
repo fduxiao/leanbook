@@ -136,6 +136,6 @@ class Document:
                 yield decl
                 continue
             if isinstance(element, module.Code):
-                yield LeanCode("\n" + element.content + "\n")
+                yield LeanCode(element.content)
                 continue
             raise ValueError(f"Unknown element: {element}")
