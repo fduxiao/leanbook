@@ -89,6 +89,7 @@ class Command(MonadicParser):
         # directives
         "#check",
         "#eval",
+        "set_option",
     ]
 
     def do(self):

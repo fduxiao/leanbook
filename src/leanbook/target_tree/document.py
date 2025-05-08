@@ -62,7 +62,7 @@ class MyRenderer(HtmlRenderer):
 
     def render_block_code(self, token: block_token.BlockCode) -> str:
         from pygments import highlight
-        from pygments.lexers import get_lexer_by_name
+        from pygments.lexers import get_lexer_by_name, guess_lexer
         from pygments.formatters import HtmlFormatter
 
         content = token.content
@@ -73,7 +73,11 @@ class MyRenderer(HtmlRenderer):
             # lean code from the file directly
             language = "lean"
             cssclass = "highlight source"
-        lexer = get_lexer_by_name(language)
+
+        if language == "":
+            lexer = guess_lexer(content)
+        else:
+            lexer = get_lexer_by_name(language)
         return highlight(content, lexer, HtmlFormatter(cssclass=cssclass))
 
     def render_inline_code(self, token: span_token.InlineCode) -> str:
@@ -180,8 +184,11 @@ class Document:
                     code += code + "\n"
                 if element.modifier != "":
                     code += element.modifier + "\n"
-                code += f"{element.type} {element.name}{element.body}"
+                code += f"{element.type} {element.name}{element.body}\n"
                 decl = LeanCode(code)
                 yield decl
+                continue
+            if isinstance(element, module.Code):
+                yield LeanCode("\n" + element.content + "\n")
                 continue
             raise ValueError(f"Unknown element: {element}")

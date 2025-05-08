@@ -116,6 +116,34 @@ class Module(Group):
     type = "module"
 
 
+class UntilNextCommand(MonadicParser):
+    def do(self):
+        ctx = yield get_ctx
+        start = ctx.pos
+        while True:
+            pos = ctx.pos
+            tk = yield lexer.any_token
+            if isinstance(
+                tk,
+                (
+                    token.EOF,
+                    token.ModuleComment,
+                    token.Command,
+                    token.TOCHint,
+                    token.DocString,
+                    token.DeclModifier,
+                ),
+            ):
+                end = tk.pos
+                ctx.pos = pos
+                break
+        content = ctx.text[start.index : end.index].rstrip()
+        return content
+
+
+until_next_command = UntilNextCommand()
+
+
 class DeclParser(MonadicParser):
     def do(self):
         ctx = yield get_ctx
@@ -143,18 +171,7 @@ class DeclParser(MonadicParser):
         else:
             name = tk.content
         # parse body
-        body = ""
-        ctx = yield get_ctx
-        while True:
-            pos = ctx.pos
-            tk = yield lexer.any_token
-            if isinstance(tk, token.EOF):
-                break
-            if isinstance(tk, token.Code):
-                body += tk.content
-            else:
-                ctx.pos = pos
-                break
+        body = yield until_next_command
         return Declaration(decl_pos, decl_type, name, body, decl_modifier)
 
 
@@ -207,7 +224,15 @@ class GroupParser(MonadicParser):
                     tk = yield lexer.identifier
                     section.append(Import(tk.pos, tk.content))
                     continue
-            raise Fail(ctx, f"Unknown Token {tk}")
+                if tk.content in ["section", "namespace"]:
+                    # TODO: finish this
+                    raise NotImplementedError()
+                # for other command, just read the code
+                code = Code(tk.pos, tk.content)
+                code.content += yield until_next_command
+                section.append(code)
+                continue
+            raise Fail(ctx, f"Expect command or module command, got {tk}")
         section.end_pos = ctx.pos
         return section
 

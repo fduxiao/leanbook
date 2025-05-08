@@ -83,5 +83,6 @@ a.disabled {
 }
 
 .highlight .kn { color: #AA22FF; font-weight: bold }
+.highlight .kd { color: #AA22FF; font-weight: bold }
 .highlight .n { color: #222 }
 .highlight .s { color: #BB4444 }
