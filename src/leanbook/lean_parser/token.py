@@ -36,6 +36,8 @@ class TOCHint(Token):
 @dataclass()
 class Identifier(Token):
     pass
+    # I would like to add this. Now, let's keep it simple
+    # end_pos: SourcePos | None = None
 
 
 @dataclass()

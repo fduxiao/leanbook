@@ -35,6 +35,7 @@ class Code(Element):
 class Import(Element):
     name: str
 
+
 @dataclass()
 class Open(Element):
     name: str
@@ -113,6 +114,12 @@ class Section(Group):
 @dataclass()
 class Namespace(Group):
     type = "namespace"
+
+
+@dataclass()
+class Mutual(Group):
+    add_name = False
+    type = "mutual"
 
 
 @dataclass()
@@ -235,9 +242,59 @@ class GroupParser(MonadicParser):
                     tk = yield lexer.identifier
                     section.append(Open(pos, tk.content))
                     continue
-                if tk.content in ["section", "namespace"]:
-                    # TODO: finish this
-                    raise NotImplementedError()
+                if tk.content == "end":
+                    # We should check the previous section/namespace/mutual command.
+                    # Since we only parse correct lean files, we simply break here.
+                    ctx.pos = tk.pos
+                    break
+                if tk.content == "mutual":
+                    result = yield mutual_parser
+                    result.pos = tk.pos
+                    tk = yield lexer.command
+                    if tk.content != "end":
+                        raise Fail(ctx, f"Expect end, but got {tk}")
+                    result.end_pos = ctx.pos
+                    section.append(result)
+                    continue
+                if tk.content == "namespace":
+                    ident = yield lexer.identifier
+                    result = yield namespace_parser
+                    result.pos = tk.pos
+                    tk = yield lexer.command
+                    if tk.content != "end":
+                        raise Fail(ctx, f"Expect end, but got {tk}")
+                    tk = yield lexer.identifier
+                    if tk.content != ident.content:
+                        raise Fail(
+                            ctx,
+                            f"Expect identifier {ident.content}, but got {tk.content}",
+                        )
+                    result.name = ident.content
+                    result.end_pos = tk.end_pos
+                    section.append(result)
+                    continue
+                if tk.content == "section":
+                    name = None
+                    ident = yield lexer.identifier.try_fail()
+                    if not isinstance(ident, Fail):
+                        name = ident.content
+                    result = yield section_parser
+                    result.pos = tk.pos
+                    tk = yield lexer.command
+                    if tk.content != "end":
+                        raise Fail(ctx, f"Expect end, but got {tk}")
+                    result.end_pos = ctx.pos
+                    if name is not None:
+                        tk = yield lexer.identifier
+                        if tk.content != ident.content:
+                            raise Fail(
+                                ctx,
+                                f"Expect identifier {ident.content}, but got {tk.content}",
+                            )
+                        result.name = ident.content
+                        result.end_pos = tk.end_pos
+                    section.append(result)
+                    continue
                 # for other command, just read the code
                 code = Code(tk.pos, tk.content)
                 code.content += yield until_next_command
@@ -250,6 +307,7 @@ class GroupParser(MonadicParser):
 
 section_parser = GroupParser(Section)
 namespace_parser = GroupParser(Namespace)
+mutual_parser = GroupParser(Mutual)
 
 
 class ModuleParser(GroupParser):

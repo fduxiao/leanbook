@@ -84,6 +84,7 @@ class Command(MonadicParser):
         # sections
         "namespace",
         "section",
+        "mutual",
         "end",
         "import",
         "open",
@@ -179,7 +180,10 @@ class Lexer(MonadicParser):
 
         w = yield identifier_parser.try_fail()
         if not isinstance(w, Fail):
-            return token.Identifier(pos, w)
+            end_pos = ctx.pos
+            ident = token.Identifier(pos, w)
+            ident.end_pos = end_pos
+            return ident
 
         # read code
         x = yield code_parser
