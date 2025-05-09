@@ -35,6 +35,10 @@ class Code(Element):
 class Import(Element):
     name: str
 
+@dataclass()
+class Open(Element):
+    name: str
+
 
 @dataclass()
 class Declaration(Element):
@@ -222,8 +226,14 @@ class GroupParser(MonadicParser):
                     section.append(decl)
                     continue
                 if tk.content == "import":
+                    pos = tk.pos
                     tk = yield lexer.identifier
-                    section.append(Import(tk.pos, tk.content))
+                    section.append(Import(pos, tk.content))
+                    continue
+                if tk.content == "open":
+                    pos = tk.pos
+                    tk = yield lexer.identifier
+                    section.append(Open(pos, tk.content))
                     continue
                 if tk.content in ["section", "namespace"]:
                     # TODO: finish this

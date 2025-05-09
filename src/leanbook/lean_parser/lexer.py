@@ -86,6 +86,7 @@ class Command(MonadicParser):
         "section",
         "end",
         "import",
+        "open",
         # directives
         "#check",
         "#eval",

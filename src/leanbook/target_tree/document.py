@@ -109,6 +109,10 @@ class Document:
                 yield LeanCode(f"import {element.name}")
                 # TODO: add to context
                 continue
+            if isinstance(element, module.Open):
+                yield LeanCode(f"import {element.name}")
+                # TODO: add to context
+                continue
             if isinstance(element, module.PushScope):
                 self.ctx.push_scope(element.name)
                 if element.type != "module":
