@@ -42,6 +42,28 @@ class Identifier(Token):
 
 @dataclass()
 class Command(Token):
+    names = [
+        # declarations
+        "def",
+        "abbrev",
+        "inductive",
+        "theorem",
+        "instance",
+        "class",
+        "axiom",
+        # sections
+        "namespace",
+        "section",
+        "mutual",
+        "end",
+        "import",
+        "open",
+        # directives
+        "#check",
+        "#eval",
+        "set_option",
+    ]
+
     def is_declaration(self):
         return self.content in [
             "def",
@@ -50,6 +72,7 @@ class Command(Token):
             "theorem",
             "instance",
             "class",
+            "axiom"
         ]
 
 

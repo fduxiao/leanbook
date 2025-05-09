@@ -73,30 +73,9 @@ identifier_parser = Identifier()
 
 
 class Command(MonadicParser):
-    commands = [
-        # declarations
-        "def",
-        "abbrev",
-        "inductive",
-        "theorem",
-        "instance",
-        "class",
-        # sections
-        "namespace",
-        "section",
-        "mutual",
-        "end",
-        "import",
-        "open",
-        # directives
-        "#check",
-        "#eval",
-        "set_option",
-    ]
-
     def do(self):
         ctx = yield parser.get_ctx
-        for w in self.commands:
+        for w in token.Command.names:
             n = len(w)
             if ctx.look(n) != w:
                 continue
