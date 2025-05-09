@@ -19,7 +19,7 @@ body {
 
 .main {
     margin-left: calc(15% + 20px);
-    padding: 10px 10px;
+    padding: 10px 5%;
 }
 
 .flex-row {
