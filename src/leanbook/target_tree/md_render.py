@@ -22,6 +22,16 @@ class BibRef(SpanToken):
         self.reference = match.group(2)
 
 
+class Math(SpanToken):
+    parse_inner = False
+    parse_group = 0
+    pattern = re.compile(r"\$\$?(.+?)\$?\$")
+
+    def __init__(self, match):
+        super().__init__(match)
+        self.math = match.group(1)
+
+
 def parse_md(md):
     return mistletoe.Document(md)
 
@@ -30,7 +40,7 @@ class MDRender(HtmlRenderer):
     def __init__(self, ctx: DocumentContext, toc):
         self.toc = toc
         self.ctx = ctx
-        super().__init__(BibRef)
+        super().__init__(BibRef, Math)
 
     def clear_toc(self):
         self.toc.clear()
@@ -75,3 +85,8 @@ class MDRender(HtmlRenderer):
         if pos is not None:
             anchor = f"#{symbol}"
         return f'<a href="{url}{anchor}">{symbol}</a>'
+
+    def render_math(self, token: Math) -> str:
+        if token.content.startswith("$$"):
+            return self.render_raw_text(token.content)
+        return f'\\({token.math}\\)'

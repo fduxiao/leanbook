@@ -1,6 +1,8 @@
 """Target tree"""
 
 from pathlib import Path
+import urllib.request
+
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 
@@ -86,8 +88,28 @@ class TargetTree:
         """render index.html and file system structures"""
         (self.output_dir / "lean_modules").mkdir(exist_ok=True, parents=True)
         (self.output_dir / "styles").mkdir(exist_ok=True, parents=True)
+        (self.output_dir / "scripts").mkdir(exist_ok=True, parents=True)
         # copy style and js files
         self.render_and_write("styles/style.css")
+        # prepare mathjax
+        download_mathjax(self.output_dir / 'scripts')
+
         # index
         with open(self.output_dir / "index.html", "w") as file:
             file.write(self.renderer.render_index(self.source_tree.top_modules))
+
+
+
+def download_mathjax(script_dir: Path):
+    base_url = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5'
+    def download(rel_path):
+        contents = urllib.request.urlopen(f'{base_url}/{rel_path}').read()
+        target_path = script_dir / rel_path
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(target_path, "wb") as file:
+            file.write(contents)
+    download("tex-mml-chtml.js")
+    download("output/chtml/fonts/woff-v2/MathJax_Zero.woff")
+    download("output/chtml/fonts/woff-v2/MathJax_AMS-Regular.woff")
+    download("output/chtml/fonts/woff-v2/MathJax_Main-Regular.woff")
+    download("output/chtml/fonts/woff-v2/MathJax_Math-Italic.woff")

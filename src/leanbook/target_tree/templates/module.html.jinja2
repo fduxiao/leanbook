@@ -1,4 +1,22 @@
 {% extends "base.html.jinja2" %}
+{% block head %}
+	<script type="text/javascript"
+            id="MathJax-script"
+            async
+            src="../scripts/tex-mml-chtml.js">
+    </script>
+
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+{% endblock %}
 {% block base_path %}..{% endblock %}
 
 {% block title %}
