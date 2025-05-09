@@ -259,14 +259,15 @@ class ModuleParser(GroupParser):
     def do(self):
         ctx = yield lexer.get_ctx
         pos = ctx.pos
-        tk: token.Comment = yield lexer.comment
+        tk: token.Comment | Fail = yield lexer.comment.try_fail()
         head_comment = None
-        if tk.content.startswith("/-"):
-            if tk.content[2] not in "!-":
-                # head comment
-                head_comment = tk.content
-        if head_comment is None:
-            ctx.pos = pos
+        if not isinstance(tk, Fail):
+            if tk.content.startswith("/-"):
+                if tk.content[2] not in "!-":
+                    # head comment
+                    head_comment = tk.content
+            if head_comment is None:
+                ctx.pos = pos
         m = yield from super().do()
         m.head_comment = head_comment
         return m
