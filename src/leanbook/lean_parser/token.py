@@ -62,6 +62,12 @@ class Command(Token):
         "#check",
         "#eval",
         "set_option",
+        # syntax
+        "syntax",
+        "macro",
+        "notation",
+        "declare_syntax_cat",
+        "macro_rules"
     ]
 
     def is_declaration(self):
