@@ -74,8 +74,24 @@ a.disabled {
   padding-inline-start: 2ch;
 }
 
+.toc_1 li {
+    margin: 5px 0;
+}
+
 code {
     background-color: #efefef;
+}
+
+
+blockquote {
+    background-color: #efefef;
+    border-left: 5px orange solid;
+    padding: 1px 10px;
+    margin: 0;
+}
+
+blockquote code {
+    background-color: #e0e0e0;
 }
 
 /* for code highlight */
