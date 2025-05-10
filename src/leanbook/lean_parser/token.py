@@ -67,7 +67,7 @@ class Command(Token):
         "macro",
         "notation",
         "declare_syntax_cat",
-        "macro_rules"
+        "macro_rules",
     ]
 
     def is_declaration(self):
@@ -78,7 +78,7 @@ class Command(Token):
             "theorem",
             "instance",
             "class",
-            "axiom"
+            "axiom",
         ]
 
 
