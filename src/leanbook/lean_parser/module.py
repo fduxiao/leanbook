@@ -38,7 +38,7 @@ class Import(Element):
 
 @dataclass()
 class Open(Element):
-    name: str
+    names: list[str]
 
 
 @dataclass()
@@ -239,8 +239,16 @@ class GroupParser(MonadicParser):
                     continue
                 if tk.content == "open":
                     pos = tk.pos
-                    tk = yield lexer.identifier
-                    section.append(Open(pos, tk.content))
+                    # read until next command or new line
+                    current_pos = ctx.pos
+                    content = yield until_next_command
+                    index = content.find("\n")
+                    if index >= 0:
+                        ctx.pos = current_pos
+                        ctx.shift(index)
+                        content = content[:index]
+                    names = content.split()
+                    section.append(Open(pos, names))
                     continue
                 if tk.content == "end":
                     # We should check the previous section/namespace/mutual command.

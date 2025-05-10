@@ -110,7 +110,7 @@ class Document:
                 # TODO: add to context
                 continue
             if isinstance(element, module.Open):
-                yield LeanCode(f"open {element.name}")
+                yield LeanCode(f"open {' '.join(element.names)}")
                 # TODO: add to context
                 continue
             if isinstance(element, module.PushScope):
