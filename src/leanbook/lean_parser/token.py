@@ -51,6 +51,7 @@ class Command(Token):
         "instance",
         "class",
         "axiom",
+        "example",
         # sections
         "namespace",
         "section",
