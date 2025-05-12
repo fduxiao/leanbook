@@ -69,6 +69,9 @@ class Command(Token):
         "notation",
         "declare_syntax_cat",
         "macro_rules",
+        "infixl",
+        "infixr",
+        "infix",
     ]
 
     def is_declaration(self):
