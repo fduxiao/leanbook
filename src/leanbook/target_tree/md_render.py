@@ -88,5 +88,5 @@ class MDRender(HtmlRenderer):
 
     def render_math(self, token: Math) -> str:
         if token.content.startswith("$$"):
-            return self.render_raw_text(token.content)
+            return self.render_raw_text(token)
         return f"\\({token.math}\\)"
