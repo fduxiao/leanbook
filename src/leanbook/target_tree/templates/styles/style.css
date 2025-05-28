@@ -101,6 +101,10 @@ blockquote code {
     padding: 0 0;
 }
 
+blockquote .highlight {
+    background-color: #e0e0e0;
+}
+
 .highlight {
     background-color: #efefef;
     margin: 5px 0;
@@ -112,5 +116,5 @@ blockquote code {
 .highlight .k { color: blue; }
 .highlight .n { color: #222 }
 .highlight .s { color: #BB4444 }
-.highlight .c1 { color: green }
+.highlight .c,.c1,.cm { color: green }
 .highlight .gr { color: red }

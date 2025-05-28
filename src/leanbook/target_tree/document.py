@@ -110,18 +110,18 @@ class Document:
                 # TODO: add to context
                 continue
             if isinstance(element, module.Open):
-                yield LeanCode(f"open {' '.join(element.names)}")
+                yield LeanCode(f"\nopen {' '.join(element.names)}\n")
                 # TODO: add to context
                 continue
             if isinstance(element, module.PushScope):
                 self.ctx.push_scope(element.name)
                 if element.type != "module":
-                    yield LeanCode(f"{element.type} {element.name or ''}")
+                    yield LeanCode(f"{element.type} {element.name or ''}\n")
                 continue
             if isinstance(element, module.PopScope):
                 self.ctx.pop_scope()
                 if element.type != "module":
-                    yield LeanCode(f"end {element.name or ''}")
+                    yield LeanCode(f"end {element.name or ''}\n")
                 continue
             if isinstance(element, module.ModuleComment):
                 content = element.content
