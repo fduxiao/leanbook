@@ -20,7 +20,7 @@ def build(args):
     source_tree = SourceTree(path)
     source_tree.build_tree()
     target_tree = TargetTree(source_tree, output)
-    target_tree.render_all()
+    target_tree.render_all(args.force_mathjax)
 
 
 def serve(args):
@@ -53,6 +53,7 @@ def main():
     build_parser.set_defaults(func=build)
     build_parser.add_argument("path", default=".", nargs="?")
     build_parser.add_argument("--output", "-o", default=None)
+    build_parser.add_argument("--force-mathjax", "-f", action="count", default=0)
 
     parse_parser = sub_cmds.add_parser("parse", description="parse a single file")
     parse_parser.set_defaults(func=parse)

@@ -75,8 +75,8 @@ class TargetTree:
         ) as file:
             file.write(html)
 
-    def render_all(self):
-        self.render_index()
+    def render_all(self, force_mathjax=False):
+        self.render_index(force_mathjax)
         for rel_path in self.source_tree.file_map:
             self.render_module(rel_path)
 
@@ -84,7 +84,7 @@ class TargetTree:
         with open(self.output_dir / path, "w") as file:
             file.write(self.renderer.render(path, **kwargs))
 
-    def render_index(self):
+    def render_index(self, force_mathjax):
         """render index.html and file system structures"""
         (self.output_dir / "lean_modules").mkdir(exist_ok=True, parents=True)
         (self.output_dir / "styles").mkdir(exist_ok=True, parents=True)
@@ -92,19 +92,22 @@ class TargetTree:
         # copy style and js files
         self.render_and_write("styles/style.css")
         # prepare mathjax
-        download_mathjax(self.output_dir / "scripts")
+        download_mathjax(self.output_dir / "scripts", force=force_mathjax)
 
         # index
         with open(self.output_dir / "index.html", "w") as file:
             file.write(self.renderer.render_index(self.source_tree.top_modules))
 
 
-def download_mathjax(script_dir: Path):
+def download_mathjax(script_dir: Path, force):
     base_url = "https://cdn.jsdelivr.net/npm/mathjax@3/es5"
 
     def download(rel_path):
-        contents = urllib.request.urlopen(f"{base_url}/{rel_path}").read()
         target_path = script_dir / rel_path
+        if not force and target_path.exists():
+            return
+
+        contents = urllib.request.urlopen(f"{base_url}/{rel_path}").read()
         target_path.parent.mkdir(parents=True, exist_ok=True)
         with open(target_path, "wb") as file:
             file.write(contents)
