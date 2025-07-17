@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass, field
 
 from . import token, lexer
-from .parser import MonadicParser, Fail, get_ctx, SourcePos
+from .parser import MonadicParser, Fail, get_ctx, SourcePos, SourceContext
 
 
 @dataclass()
@@ -50,6 +50,7 @@ class Declaration(Element):
     body: str
     modifier: str = ""
     doc_string: str = ""
+    scoped: bool = False
 
     def symbols(self):
         yield self.pos, self.name
@@ -190,6 +191,90 @@ class DeclParser(MonadicParser):
 decl_parser = DeclParser()
 
 
+class CommandContentParser(MonadicParser):
+    def __init__(self, cmd: token.Command, ctx: SourceContext):
+        self.cmd = cmd
+        self.ctx = ctx
+
+    def do(self):
+        cmd = self.cmd
+        ctx = self.ctx
+        if cmd.is_declaration():
+            ctx.pos = cmd.pos
+            decl = yield decl_parser
+            return decl
+        if cmd.content == "import":
+            pos = cmd.pos
+            tk = yield lexer.identifier
+            return Import(pos, tk.content)
+        if cmd.content == "open":
+            pos = cmd.pos
+            # read until next command or new line
+            current_pos = ctx.pos
+            content = yield until_next_command
+            index = content.find("\n")
+            if index >= 0:
+                ctx.pos = current_pos
+                ctx.shift(index)
+                content = content[:index]
+            names = content.split()
+            return Open(pos, names)
+        if cmd.content == "end":
+            # We should check the previous section/namespace/mutual command.
+            # Since we only parse correct lean files, we simply break here.
+            ctx.pos = cmd.pos
+            return None
+        if cmd.content == "mutual":
+            result = yield mutual_parser
+            result.pos = cmd.pos
+            tk = yield lexer.command
+            if tk.content != "end":
+                raise Fail(ctx, f"Expect end, but got {tk}")
+            result.end_pos = ctx.pos
+            return result
+        if cmd.content == "namespace":
+            ident = yield lexer.identifier
+            result = yield namespace_parser
+            result.pos = cmd.pos
+            tk = yield lexer.command
+            if tk.content != "end":
+                raise Fail(ctx, f"Expect end, but got {tk}")
+            tk = yield lexer.identifier
+            if tk.content != ident.content:
+                raise Fail(
+                    ctx,
+                    f"Expect identifier {ident.content}, but got {tk.content}",
+                )
+            result.name = ident.content
+            result.end_pos = tk.end_pos
+            return result
+        if cmd.content == "section":
+            name = None
+            ident = yield lexer.identifier.try_fail()
+            if not isinstance(ident, Fail):
+                name = ident.content
+            result = yield section_parser
+            result.pos = cmd.pos
+            tk = yield lexer.command
+            if tk.content != "end":
+                raise Fail(ctx, f"Expect end, but got {tk}")
+            result.end_pos = ctx.pos
+            if name is not None:
+                tk = yield lexer.identifier
+                if tk.content != ident.content:
+                    raise Fail(
+                        ctx,
+                        f"Expect identifier {ident.content}, but got {tk.content}",
+                    )
+                result.name = ident.content
+                result.end_pos = tk.end_pos
+            return result
+        # for other command, just read the code
+        code = Code(cmd.pos, cmd.content)
+        code.content += yield until_next_command
+        return code
+
+
 class GroupParser(MonadicParser):
     def __init__(self, group_class=Group):
         self.group_class = group_class
@@ -227,86 +312,23 @@ class GroupParser(MonadicParser):
                 section.append(decl)
                 continue
             if isinstance(tk, token.Command):
-                if tk.is_declaration():
-                    ctx.pos = tk.pos
-                    decl = yield decl_parser
-                    section.append(decl)
-                    continue
-                if tk.content == "import":
-                    pos = tk.pos
-                    tk = yield lexer.identifier
-                    section.append(Import(pos, tk.content))
-                    continue
-                if tk.content == "open":
-                    pos = tk.pos
-                    # read until next command or new line
-                    current_pos = ctx.pos
-                    content = yield until_next_command
-                    index = content.find("\n")
-                    if index >= 0:
-                        ctx.pos = current_pos
-                        ctx.shift(index)
-                        content = content[:index]
-                    names = content.split()
-                    section.append(Open(pos, names))
-                    continue
-                if tk.content == "end":
-                    # We should check the previous section/namespace/mutual command.
-                    # Since we only parse correct lean files, we simply break here.
-                    ctx.pos = tk.pos
+                scoped = False
+                pos = tk.pos
+                if tk.content == "scoped":
+                    scoped = True
+                    tk = yield lexer.any_token
+                    if not isinstance(tk, token.Command):
+                        raise SyntaxError(f"expect command but got `{tk.content}`")
+                cmd_content = CommandContentParser(tk, ctx)
+                element = yield cmd_content
+                if element is None:
+                    # We parsed the `end`. Break here
                     break
-                if tk.content == "mutual":
-                    result = yield mutual_parser
-                    result.pos = tk.pos
-                    tk = yield lexer.command
-                    if tk.content != "end":
-                        raise Fail(ctx, f"Expect end, but got {tk}")
-                    result.end_pos = ctx.pos
-                    section.append(result)
-                    continue
-                if tk.content == "namespace":
-                    ident = yield lexer.identifier
-                    result = yield namespace_parser
-                    result.pos = tk.pos
-                    tk = yield lexer.command
-                    if tk.content != "end":
-                        raise Fail(ctx, f"Expect end, but got {tk}")
-                    tk = yield lexer.identifier
-                    if tk.content != ident.content:
-                        raise Fail(
-                            ctx,
-                            f"Expect identifier {ident.content}, but got {tk.content}",
-                        )
-                    result.name = ident.content
-                    result.end_pos = tk.end_pos
-                    section.append(result)
-                    continue
-                if tk.content == "section":
-                    name = None
-                    ident = yield lexer.identifier.try_fail()
-                    if not isinstance(ident, Fail):
-                        name = ident.content
-                    result = yield section_parser
-                    result.pos = tk.pos
-                    tk = yield lexer.command
-                    if tk.content != "end":
-                        raise Fail(ctx, f"Expect end, but got {tk}")
-                    result.end_pos = ctx.pos
-                    if name is not None:
-                        tk = yield lexer.identifier
-                        if tk.content != ident.content:
-                            raise Fail(
-                                ctx,
-                                f"Expect identifier {ident.content}, but got {tk.content}",
-                            )
-                        result.name = ident.content
-                        result.end_pos = tk.end_pos
-                    section.append(result)
-                    continue
-                # for other command, just read the code
-                code = Code(tk.pos, tk.content)
-                code.content += yield until_next_command
-                section.append(code)
+                # otherwise, append to section
+                if scoped:
+                    element.pos = pos
+                    element.content = "scoped " + element.content
+                section.append(element)
                 continue
             raise Fail(ctx, f"Expect command or module command, got {tk}")
         section.end_pos = ctx.pos

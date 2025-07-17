@@ -65,6 +65,7 @@ class Command(Token):
         "#eval",
         "set_option",
         # syntax
+        "scoped",
         "syntax",
         "macro",
         "notation",
