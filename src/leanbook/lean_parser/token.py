@@ -63,6 +63,7 @@ class Command(Token):
         # directives
         "#check",
         "#eval",
+        "#print",
         "set_option",
         # syntax
         "scoped",
@@ -74,6 +75,8 @@ class Command(Token):
         "infixl",
         "infixr",
         "infix",
+        # others
+        "attribute",
     ]
 
     def is_declaration(self):
