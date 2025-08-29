@@ -135,7 +135,7 @@ class Document:
                     code += code + "\n"
                 if element.modifier != "":
                     code += element.modifier + "\n"
-                code += f"{element.type} {element.name}{element.body}\n"
+                code += f"{element.type} {element.name or ''}{element.body}\n"
                 decl = LeanCode(code)
                 yield decl
                 continue
