@@ -29,6 +29,7 @@ class ModuleComment(Element):
 @dataclass()
 class Code(Element):
     content: str
+    scoped: bool = False
 
 
 @dataclass()
@@ -327,7 +328,7 @@ class GroupParser(MonadicParser):
                 # otherwise, append to section
                 if scoped:
                     element.pos = pos
-                    element.content = "scoped " + element.content
+                    element.scoped = True
                 section.append(element)
                 continue
             raise Fail(ctx, f"Expect command or module command, got {tk}")

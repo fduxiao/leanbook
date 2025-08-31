@@ -135,11 +135,17 @@ class Document:
                     code += code + "\n"
                 if element.modifier != "":
                     code += element.modifier + "\n"
-                code += f"{element.type} {element.name or ''}{element.body}\n"
+                scoped = ""
+                if element.scoped:
+                    scoped = "scoped "
+                code += f"{scoped}{element.type} {element.name or ''}{element.body}\n"
                 decl = LeanCode(code)
                 yield decl
                 continue
             if isinstance(element, module.Code):
-                yield LeanCode(element.content)
+                content = element.content
+                if element.scoped:
+                    content = f"scoped {content}"
+                yield LeanCode(content)
                 continue
             raise ValueError(f"Unknown element: {element}")
