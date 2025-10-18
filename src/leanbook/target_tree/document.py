@@ -116,12 +116,13 @@ class Document:
             if isinstance(element, module.PushScope):
                 self.ctx.push_scope(element.name)
                 if element.type != "module":
-                    yield LeanCode(f"{element.type} {element.name or ''}\n")
+                    yield LeanCode(f"{element.type} {element.name or ''}\n".strip())
                 continue
             if isinstance(element, module.PopScope):
                 self.ctx.pop_scope()
                 if element.type != "module":
-                    yield LeanCode(f"end {element.name or ''}\n")
+                    if element.with_end:
+                        yield LeanCode(f"end {element.name or ''}\n".strip())
                 continue
             if isinstance(element, module.ModuleComment):
                 content = element.content

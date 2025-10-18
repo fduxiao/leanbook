@@ -67,6 +67,7 @@ class PushScope(Element):
 class PopScope(Element):
     type: str
     name: str | None = None
+    with_end: bool = True
 
 
 @dataclass()
@@ -74,6 +75,7 @@ class Group(Element):
     end_pos: SourcePos = field(default_factory=lambda: SourcePos(0, 1, 1))
     name: str | None = None
     elements: list[Element] = field(default_factory=list)
+    with_end: bool = True
     add_name = True
     type = ""
     toc_hint = None
@@ -97,7 +99,7 @@ class Group(Element):
         yield PushScope(self.pos, self.type, name)
         for one in self.elements:
             yield from one.element_stream()
-        yield PopScope(self.end_pos, self.type, self.name)
+        yield PopScope(self.end_pos, self.type, self.name, with_end=self.with_end)
 
     def add_toc_hint(self, comment_string):
         line_pattern = re.compile(r"^[\s ]*?[-*] +`(.*?)`: (.*?)$", re.MULTILINE)
@@ -235,19 +237,24 @@ class CommandContentParser(MonadicParser):
             return result
         if cmd.content == "namespace":
             ident = yield lexer.identifier
-            result = yield namespace_parser
+            result: Group = yield namespace_parser
             result.pos = cmd.pos
-            tk = yield lexer.command
-            if tk.content != "end":
-                raise Fail(ctx, f"Expect end, but got {tk}")
-            tk = yield lexer.identifier
-            if tk.content != ident.content:
-                raise Fail(
-                    ctx,
-                    f"Expect identifier {ident.content}, but got {tk.content}",
-                )
             result.name = ident.content
-            result.end_pos = tk.end_pos
+            # check the next token is EOF or end
+            tk = yield lexer.eof | lexer.command
+            if isinstance(tk, token.EOF):
+                result.with_end = False
+            elif isinstance(tk, token.Command):
+                if tk.content != "end":
+                    raise Fail(ctx, f"Expect end, but got {tk}")
+                tk = yield lexer.identifier
+                if tk.content != ident.content:
+                    raise Fail(
+                        ctx,
+                        f"Expect identifier {ident.content}, but got {tk.content}",
+                    )
+                result.end_pos = tk.end_pos
+                result.with_end = True
             return result
         if cmd.content == "section":
             name = None
