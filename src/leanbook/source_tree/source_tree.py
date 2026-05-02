@@ -35,7 +35,7 @@ class SourceTree:
     def __init__(self, path: str | Path):
         self.path = Path(path)
         self.top_modules: dict[Path, str] = {}
-        self.toc_hits: dict[str, TOCHint] = {}
+        self.toc_hints: dict[str, TOCHint] = {}
         self.file_map: dict[Path, SourceFile] = {}
         self.symbol_tree = SymbolTree()
 
@@ -86,11 +86,11 @@ class SourceTree:
                 self.symbol_tree.add(rel_path, symbol, pos)
 
     def build_toc_hint(self):
-        self.toc_hits.clear()
+        self.toc_hints.clear()
         children_lists = {}
         # make empty hints
         for file in self.file_map.values():
-            self.toc_hits.setdefault(file.module_name, TOCHint())
+            self.toc_hints.setdefault(file.module_name, TOCHint())
         # we first find parents and children
         for file in self.file_map.values():
             toc = file.module.toc_hint
@@ -98,10 +98,10 @@ class SourceTree:
                 continue
             children_lists[file.module_name] = [x[0] for x in toc]
             for child, _ in toc:
-                self.toc_hits[child].up = file.module_name
+                self.toc_hints[child].up = file.module_name
         # the prev and next
         for file in self.file_map.values():
-            hint = self.toc_hits[file.module_name]
+            hint = self.toc_hints[file.module_name]
             parent = hint.up
             siblings = children_lists.get(parent, None)
             if siblings is None:
@@ -114,7 +114,7 @@ class SourceTree:
                 hint.next = siblings[index + 1]
 
     def get_toc_hint(self, module_name):
-        return self.toc_hits[module_name]
+        return self.toc_hints[module_name]
 
     def build_tree(self):
         self.scan_files()
