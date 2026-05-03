@@ -110,9 +110,14 @@ class CodeParser(MonadicParser):
             if ctx.look(2) == "@[":
                 break
             # stop at keywords
-            cmd = yield command_parser.try_look()
-            if not isinstance(cmd, Fail):
-                break
+            ident = yield identifier_parser.try_look()
+            if not isinstance(ident, Fail):
+                cmd = yield command_parser.try_look()
+                if not isinstance(cmd, Fail):
+                    if cmd == ident:
+                        break
+                result += ctx.take(len(ident))
+                continue
             result += ctx.take(1)
         return result
 

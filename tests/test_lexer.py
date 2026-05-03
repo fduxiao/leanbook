@@ -12,8 +12,12 @@ class TestLexer(unittest.TestCase):
         parser = lexer.CodeParser()
         helper = ParserHelper(self, parser)
         helper.assert_complete_parse(r"abcd")
-        ctx = helper.assert_parse(r'abcd "\"/-" /-')
-        self.assertEqual(ctx.rest(), "/-")
+        helper.assert_rest(r'abcd "\"/-" /-', "/-")
+
+        helper.assert_complete_parse("""xxx (myAppend t l2)""")
+        helper.assert_rest('" end" sss end', "end")
+        helper.assert_rest('" end" end', "end")
+        helper.assert_rest(r'" \" end" end', "end")
 
     def test_parse_block_comment(self):
         parser = lexer.BlockComment()

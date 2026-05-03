@@ -15,6 +15,13 @@ class ParserHelper:
         self.test_case.assertEqual(parsed, result)
         return ctx
 
+    def assert_rest(self, text, rest):
+        ctx = SourceContext(text)
+        parsed = self.parser.parse(ctx)
+        result = text[: len(parsed)]
+        self.test_case.assertEqual(parsed, result)
+        self.test_case.assertEqual(ctx.rest(), rest)
+
     def assert_complete_parse(self, text, result=None):
         ctx = self.assert_parse(text, result)
         self.test_case.assertTrue(ctx.end())
