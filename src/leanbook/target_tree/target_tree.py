@@ -95,6 +95,8 @@ class TargetTree:
                 zip_file.write(file, zip_path)
 
     def render_all(self, force_mathjax=False, with_source=False):
+        # make the output dir
+        self.output_dir.mkdir(parents=True, exist_ok=True)
         # license
         self.copy_license()
         if with_source:
