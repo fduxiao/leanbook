@@ -59,6 +59,10 @@ class SourceTree:
         return self.path / "LICENSE"
 
     @property
+    def bib_path(self):
+        return self.path / "references.bib"
+
+    @property
     def dir_name(self):
         return self.path.absolute().name
 

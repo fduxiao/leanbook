@@ -48,7 +48,7 @@ class MDRender(HtmlRenderer):
     def render_bib_ref(self, token: BibRef) -> str:
         inner = self.render_inner(token)
         href = f"#ref_{token.reference}"
-        return f'<a href="../api/references.html{href}">{inner}</a>'
+        return f'<a href="../references.html{href}">{inner}</a>'
 
     def render_heading(self, token: block_token.Heading) -> str:
         content = token.children[0].content

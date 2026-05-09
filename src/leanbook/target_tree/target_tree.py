@@ -6,6 +6,8 @@ from pathlib import Path
 import urllib.request
 
 from jinja2 import Environment, PackageLoader, select_autoescape
+from pybtex.database import parse_file
+from pybtex.plugin import find_plugin
 
 
 from ..source_tree import SourceTree, SourceFile
@@ -28,6 +30,26 @@ class TemplateRenderer:
         for rel_path, name in top_modules.items():
             data.append({"href": f"./lean_modules/{name}.html", "name": rel_path.name})
         return self.render("index.html.jinja2", top_modules=data)
+
+    def render_refs(self, bib_path) -> str:
+        bib_data = parse_file(bib_path)
+        data = []
+        for key, entry in bib_data.entries.items():
+            fields = entry.fields
+            style = find_plugin("pybtex.style.formatting", "plain")()
+            backend = find_plugin("pybtex.backends", "html")()
+
+            # Format and render
+            formatted_bib = style.format_entry("1", entry)
+            display = formatted_bib.text.render(backend)
+            data.append(
+                {
+                    "key": key,
+                    "title": fields["title"],
+                    "display": display,
+                }
+            )
+        return self.render("references.html.jinja2", refs=data)
 
     def render_module(self, title, toc, toc_hint, body):
         def opt_href(x, default=None):
@@ -94,6 +116,12 @@ class TargetTree:
                     continue
                 zip_file.write(file, zip_path)
 
+    def make_references(self):
+        bib_path = self.source_tree.bib_path
+        with open(self.output_dir / "references.html", "w") as file:
+            file.write(self.renderer.render_refs(bib_path))
+        pass
+
     def render_all(self, force_mathjax=False, with_source=False):
         # make the output dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -102,6 +130,7 @@ class TargetTree:
         if with_source:
             # source files
             self.zip_source()
+        self.make_references()
         self.render_index(force_mathjax)
         for rel_path in self.source_tree.file_map:
             self.render_module(rel_path)

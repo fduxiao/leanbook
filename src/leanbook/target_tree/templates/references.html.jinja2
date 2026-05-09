@@ -1,0 +1,20 @@
+{% extends "base.html.jinja2" %}
+
+{% block title %}
+	References
+{% endblock %}
+
+{% block body %}
+    <div style="margin: 10px 30px">
+        <h1>References</h1>
+        <ul id="index-ol">
+            {% for item in refs %}
+                <li>
+                    <a id="ref_{{ item["key"] }}" href="#ref_{{ item["key"] }}">[{{ item["key"] }}]:</a>
+                    {{ item["title"] }}
+                    {{ item["display"] }}
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endblock %}
