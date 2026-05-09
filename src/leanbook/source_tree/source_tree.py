@@ -17,6 +17,17 @@ def iter_subtree(path: Path):
             yield one
 
 
+def iter_zip_targets(path: Path):
+    one: Path
+    for one in path.iterdir():
+        if one.is_dir():
+            if one.name.startswith("."):
+                continue
+            yield from iter_subtree(one)
+        elif one.is_file():
+            yield one
+
+
 def parse_module_name(rel_path: Path):
     module_name = ".".join(rel_path.parts)
     if module_name.endswith(".lean"):
@@ -42,6 +53,22 @@ class SourceTree:
     @property
     def lakefile_toml(self):
         return self.path / "lakefile.toml"
+
+    @property
+    def license_path(self):
+        return self.path / "LICENSE"
+
+    @property
+    def dir_name(self):
+        return self.path.absolute().name
+
+    def iter_zip_files(self):
+        zip_dir = Path(self.dir_name)
+        for file in iter_zip_targets(self.path):
+            if not file.is_file():
+                continue
+            rel_path = file.relative_to(self.path)
+            yield file, zip_dir / rel_path
 
     def iter_files(self):
         with open(self.lakefile_toml) as file:

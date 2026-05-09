@@ -1,5 +1,7 @@
 """Target tree"""
 
+import shutil
+import zipfile
 from pathlib import Path
 import urllib.request
 
@@ -75,7 +77,29 @@ class TargetTree:
         ) as file:
             file.write(html)
 
-    def render_all(self, force_mathjax=False):
+    def copy_license(self):
+        target_path = self.get_path("LICENSE.txt")
+        print("copying license to", target_path)
+        shutil.copyfile(
+            src=self.source_tree.license_path, dst=target_path, follow_symlinks=True
+        )
+
+    def zip_source(self):
+        name = self.source_tree.dir_name
+        target_path = self.get_path(f"{name}.zip")
+        print("zip source code to", target_path)
+        with zipfile.ZipFile(target_path, "w") as zip_file:
+            for file, zip_path in self.source_tree.iter_zip_files():
+                if file.name.startswith("."):
+                    continue
+                zip_file.write(file, zip_path)
+
+    def render_all(self, force_mathjax=False, with_source=False):
+        # license
+        self.copy_license()
+        if with_source:
+            # source files
+            self.zip_source()
         self.render_index(force_mathjax)
         for rel_path in self.source_tree.file_map:
             self.render_module(rel_path)
