@@ -1,8 +1,12 @@
+import re
 from dataclasses import dataclass
 
 from ..lean_parser import module
 from .context import DocumentContext
 from .md_render import MDRender, parse_md
+
+
+SolutionPattern = re.compile(r"solution\[\[(.*?)]]", re.M | re.S)
 
 
 class TOC:
@@ -54,7 +58,10 @@ class DocElement:
 @dataclass()
 class LeanCode(DocElement):
     def render_md(self) -> str:
-        code = f"```lean-source\n{self.content}\n```"
+        # remove solutions
+        content = self.content
+        content = SolutionPattern.sub("sorry", content)
+        code = f"```lean-source\n{content}\n```"
         return code
 
 
