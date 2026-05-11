@@ -61,6 +61,7 @@ class Declaration(Element):
 class PushScope(Element):
     type: str
     name: str | None = None
+    add_to_scope: bool = True
 
 
 @dataclass()
@@ -72,11 +73,18 @@ class PopScope(Element):
 
 @dataclass()
 class Group(Element):
+    """
+    A group is something like a section or namespace.
+    The names of the namespaces affect the symbol names,
+    while the ones of a section not.
+    This is controlled by variable `add_to_scope`
+    """
+
     end_pos: SourcePos = field(default_factory=lambda: SourcePos(0, 1, 1))
     name: str | None = None
     elements: list[Element] = field(default_factory=list)
     with_end: bool = True
-    add_name = True
+    add_to_scope = True
     type = ""
     toc_hint = None
 
@@ -87,16 +95,13 @@ class Group(Element):
     def symbols(self):
         for one in self.elements:
             for pos, sym in one.symbols():
-                if self.add_name:
+                if self.add_to_scope:
                     if self.name is not None:
                         sym = f"{self.name}.{sym}"
                 yield pos, sym
 
     def element_stream(self):
-        name = None
-        if self.add_name:
-            name = self.name
-        yield PushScope(self.pos, self.type, name)
+        yield PushScope(self.pos, self.type, self.name, add_to_scope=self.add_to_scope)
         for one in self.elements:
             yield from one.element_stream()
         yield PopScope(self.end_pos, self.type, self.name, with_end=self.with_end)
@@ -111,7 +116,7 @@ class Group(Element):
 
 @dataclass()
 class Section(Group):
-    add_name = False
+    add_to_scope = False
     type = "section"
 
 
@@ -122,7 +127,7 @@ class Namespace(Group):
 
 @dataclass()
 class Mutual(Group):
-    add_name = False
+    add_to_scope = False
     type = "mutual"
 
 
