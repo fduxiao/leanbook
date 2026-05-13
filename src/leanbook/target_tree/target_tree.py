@@ -12,7 +12,7 @@ from pybtex.plugin import find_plugin
 
 from ..source_tree import SourceTree, SourceFile
 from .context import DocumentContext
-from .document import Document
+from .document import Document, remove_solution
 
 
 class TemplateRenderer:
@@ -111,10 +111,16 @@ class TargetTree:
         target_path = self.get_path(f"{name}.zip")
         print("zip source code to", target_path)
         with zipfile.ZipFile(target_path, "w") as zip_file:
-            for file, zip_path in self.source_tree.iter_zip_files():
-                if file.name.startswith("."):
+            for file_path, zip_path in self.source_tree.iter_zip_files():
+                if file_path.name.startswith("."):
                     continue
-                zip_file.write(file, zip_path)
+                with open(file_path, "r") as file:
+                    content = file.read()
+                if not file_path.name.startswith("_"):
+                    content = remove_solution(content)
+                content = content.encode()
+                with zip_file.open(str(zip_path), "w") as file:
+                    file.write(content)
 
     def make_references(self):
         bib_path = self.source_tree.bib_path

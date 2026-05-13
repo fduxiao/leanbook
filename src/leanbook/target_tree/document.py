@@ -9,6 +9,10 @@ from .md_render import MDRender, parse_md
 SolutionPattern = re.compile(r"solution\[\[(.*?)]]", re.M | re.S)
 
 
+def remove_solution(content):
+    return SolutionPattern.sub("sorry", content)
+
+
 class TOC:
     def __init__(self):
         self.list = []
@@ -59,8 +63,7 @@ class DocElement:
 class LeanCode(DocElement):
     def render_md(self) -> str:
         # remove solutions
-        content = self.content
-        content = SolutionPattern.sub("sorry", content)
+        content = remove_solution(self.content)
         code = f"```lean-source\n{content}\n```"
         return code
 
