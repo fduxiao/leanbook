@@ -53,6 +53,7 @@ class Command(Token):
         "class",
         "axiom",
         "example",
+        "#try",
         # sections
         "namespace",
         "section",
@@ -69,6 +70,7 @@ class Command(Token):
         "scoped",
         "syntax",
         "macro",
+        "elab",
         "notation",
         "declare_syntax_cat",
         "macro_rules",
